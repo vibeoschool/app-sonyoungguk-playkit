@@ -15,8 +15,7 @@
   header { text-align: center; margin-bottom: 48px; }
   h1 { font-size: 40px; font-weight: 800; letter-spacing: -1px; }
   .sub { color: #8a92a3; margin-top: 10px; font-size: 16px; }
-  .grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 20px; }
-  @media (max-width: 720px){ .grid { grid-template-columns: 1fr; } }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; }
   a.card {
     display: block; text-decoration: none; color: inherit;
     background: linear-gradient(180deg,#181b22,#1f2530);
@@ -30,6 +29,7 @@
   .t2 { background: rgba(124,140,255,.15); color: #7c8cff; }
   .t3 { background: rgba(255,107,91,.15); color: #ff6b5b; }
   .t4 { background: rgba(255,207,91,.15); color: #ffcf5b; }
+  .t5 { background: rgba(159,122,234,.15); color: #b794f4; }
   a.card h2 { font-size: 20px; margin-bottom: 8px; }
   a.card p { color: #8a92a3; font-size: 14px; line-height: 1.5; }
   footer { text-align: center; margin-top: 48px; color: #5a6270; font-size: 13px; }
@@ -65,6 +65,12 @@
         <span class="tag t4">도구</span>
         <h2>Dice</h2>
         <p>주사위를 1~5개까지 굴려 결과와 합계를 확인. 보드게임이나 무작위 선택에 딱.</p>
+      </a>
+      <a class="card" href="seats.html">
+        <div class="emoji">🪑</div>
+        <span class="tag t5">교실</span>
+        <h2>Seats</h2>
+        <p>학생 명단으로 교실 자리를 랜덤 배정. 제외석·고정석·자리교환에 배치도 이미지 저장까지.</p>
       </a>
     </div>
     <footer>각 카드를 클릭하면 앱이 열립니다 · 오프라인에서도 작동</footer>
