@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Focus — 뽀모도로 타이머</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #181b22;
+    --panel2: #1f2530;
+    --accent: #ff6b5b;
+    --accent2: #4fd1c5;
+    --text: #e6e9ef;
+    --muted: #8a92a3;
+    --line: #2a303c;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: radial-gradient(1200px 800px at 70% -10%, #1a1f2b 0%, var(--bg) 55%);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .app {
+    width: 100%;
+    max-width: 760px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  @media (max-width: 680px) { .app { grid-template-columns: 1fr; } }
+  .card {
+    background: linear-gradient(180deg, var(--panel) 0%, var(--panel2) 100%);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 28px;
+  }
+  h1 { font-size: 15px; letter-spacing: .5px; color: var(--muted); font-weight: 600; text-transform: uppercase; margin-bottom: 20px; }
+  .modes { display: flex; gap: 8px; margin-bottom: 24px; }
+  .modes button {
+    flex: 1; padding: 8px; border-radius: 10px; border: 1px solid var(--line);
+    background: transparent; color: var(--muted); font-size: 12px; font-weight: 600;
+    cursor: pointer; transition: .2s;
+  }
+  .modes button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .timer-wrap { display: flex; flex-direction: column; align-items: center; }
+  .ring { position: relative; width: 220px; height: 220px; }
+  .ring svg { transform: rotate(-90deg); }
+  .ring circle { fill: none; stroke-width: 12; stroke-linecap: round; }
+  .ring .track { stroke: var(--line); }
+  .ring .progress { stroke: var(--accent); transition: stroke-dashoffset .3s linear; }
+  .time {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+  .time .num { font-size: 48px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .time .lbl { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .controls { display: flex; gap: 12px; margin-top: 24px; }
+  .controls button {
+    padding: 12px 22px; border-radius: 12px; border: none; font-size: 14px;
+    font-weight: 700; cursor: pointer; transition: .15s;
+  }
+  .btn-primary { background: var(--accent2); color: #06231f; }
+  .btn-primary:hover { transform: translateY(-1px); }
+  .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--line) !important; }
+  .stat { color: var(--muted); font-size: 12px; margin-top: 18px; }
+  .stat b { color: var(--text); }
+
+  /* Tasks */
+  .add { display: flex; gap: 8px; margin-bottom: 16px; }
+  .add input {
+    flex: 1; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--line);
+    background: var(--bg); color: var(--text); font-size: 14px; outline: none;
+  }
+  .add input:focus { border-color: var(--accent2); }
+  .add button {
+    width: 44px; border-radius: 10px; border: none; background: var(--accent2);
+    color: #06231f; font-size: 22px; font-weight: 700; cursor: pointer;
+  }
+  ul { list-style: none; display: flex; flex-direction: column; gap: 8px; max-height: 300px; overflow-y: auto; }
+  li {
+    display: flex; align-items: center; gap: 12px; padding: 12px 14px;
+    background: var(--bg); border: 1px solid var(--line); border-radius: 10px;
+  }
+  li.done .txt { text-decoration: line-through; color: var(--muted); }
+  .check {
+    width: 20px; height: 20px; border-radius: 6px; border: 2px solid var(--line);
+    cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    transition: .15s;
+  }
+  li.done .check { background: var(--accent2); border-color: var(--accent2); }
+  .check svg { width: 12px; height: 12px; opacity: 0; }
+  li.done .check svg { opacity: 1; }
+  .txt { flex: 1; font-size: 14px; }
+  .del { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 18px; opacity: .5; }
+  .del:hover { opacity: 1; color: var(--accent); }
+  .empty { color: var(--muted); font-size: 13px; text-align: center; padding: 24px 0; }
+
+  .home-btn {
+    position: fixed; top: 16px; left: 16px; z-index: 100;
+    width: 40px; height: 40px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.14);
+    color: #eef0f6; text-decoration: none;
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+    transition: .15s;
+  }
+  .home-btn:hover { background: rgba(255,255,255,.16); transform: translateY(-1px); }
+</style>
+</head>
+<body>
+  <a href="index.html" class="home-btn" aria-label="홈으로" title="홈으로">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
+  </a>
+  <div class="app">
+    <div class="card">
+      <h1>집중 타이머</h1>
+      <div class="modes">
+        <button data-min="25" class="active">집중 25</button>
+        <button data-min="5">짧은 휴식 5</button>
+        <button data-min="15">긴 휴식 15</button>
+      </div>
+      <div class="timer-wrap">
+        <div class="ring">
+          <svg width="220" height="220">
+            <circle class="track" cx="110" cy="110" r="100"></circle>
+            <circle class="progress" cx="110" cy="110" r="100"></circle>
+          </svg>
+          <div class="time">
+            <div class="num" id="display">25:00</div>
+            <div class="lbl" id="mode-label">집중 시간</div>
+          </div>
+        </div>
+        <div class="controls">
+          <button class="btn-primary" id="startBtn">시작</button>
+          <button class="btn-ghost" id="resetBtn">리셋</button>
+        </div>
+        <div class="stat">완료한 세션: <b id="sessions">0</b> · 오늘 집중 <b id="focusMin">0</b>분</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h1>할 일</h1>
+      <div class="add">
+        <input id="taskInput" placeholder="할 일을 입력하고 Enter" maxlength="80">
+        <button id="addBtn">+</button>
+      </div>
+      <ul id="taskList"></ul>
+      <div class="empty" id="emptyMsg">아직 할 일이 없어요. 하나 추가해 보세요 ✍️</div>
+    </div>
+  </div>
+
+<script>
+const CIRC = 2 * Math.PI * 100;
+const progress = document.querySelector('.progress');
+progress.style.strokeDasharray = CIRC;
+progress.style.strokeDashoffset = 0;
+
+let totalSec = 25 * 60, remaining = totalSec, running = false, timer = null;
+let sessions = 0, focusMin = 0, currentMin = 25;
+
+const display = document.getElementById('display');
+const startBtn = document.getElementById('startBtn');
+const modeLabel = document.getElementById('mode-label');
+
+function fmt(s){ const m=Math.floor(s/60), ss=s%60; return `${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}`; }
+function render(){
+  display.textContent = fmt(remaining);
+  progress.style.strokeDashoffset = CIRC * (1 - remaining/totalSec);
+}
+function tick(){
+  remaining--;
+  if(remaining <= 0){
+    remaining = 0; render(); stop();
+    if(currentMin >= 15 || currentMin === 25){} // no-op guard
+    if(document.querySelector('.modes button.active').dataset.min === "25"){
+      sessions++; focusMin += 25;
+      document.getElementById('sessions').textContent = sessions;
+      document.getElementById('focusMin').textContent = focusMin;
+    }
+    flash();
+    return;
+  }
+  render();
+}
+function start(){ if(running) return; running=true; startBtn.textContent='일시정지'; startBtn.classList.remove('btn-primary'); timer=setInterval(tick,1000); }
+function stop(){ running=false; startBtn.textContent='시작'; startBtn.classList.add('btn-primary'); clearInterval(timer); }
+function reset(){ stop(); remaining=totalSec; render(); }
+function flash(){
+  let n=0; const id=setInterval(()=>{ document.body.style.background = n%2? '#1a1f2b' : 'radial-gradient(1200px 800px at 70% -10%, #2a1f2b 0%, #0f1115 55%)'; if(++n>5){clearInterval(id); document.body.style.background='';} },300);
+  try { new AudioContext(); } catch(e){}
+}
+startBtn.onclick = ()=> running ? stop() : start();
+document.getElementById('resetBtn').onclick = reset;
+
+document.querySelectorAll('.modes button').forEach(b=>{
+  b.onclick = ()=>{
+    document.querySelectorAll('.modes button').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    currentMin = +b.dataset.min;
+    totalSec = currentMin*60; remaining = totalSec;
+    modeLabel.textContent = currentMin===25 ? '집중 시간' : '휴식 시간';
+    progress.style.stroke = currentMin===25 ? 'var(--accent)' : 'var(--accent2)';
+    stop(); render();
+  };
+});
+render();
+
+// Tasks
+const taskInput = document.getElementById('taskInput');
+const taskList = document.getElementById('taskList');
+const emptyMsg = document.getElementById('emptyMsg');
+let tasks = [];
+
+function refresh(){
+  taskList.innerHTML = '';
+  emptyMsg.style.display = tasks.length ? 'none' : 'block';
+  tasks.forEach((t,i)=>{
+    const li = document.createElement('li');
+    if(t.done) li.className='done';
+    li.innerHTML = `
+      <div class="check"><svg viewBox="0 0 24 24" fill="none" stroke="#06231f" stroke-width="3"><path d="M4 12l6 6L20 6"/></svg></div>
+      <span class="txt"></span>
+      <button class="del">×</button>`;
+    li.querySelector('.txt').textContent = t.text;
+    li.querySelector('.check').onclick = ()=>{ t.done=!t.done; refresh(); };
+    li.querySelector('.del').onclick = ()=>{ tasks.splice(i,1); refresh(); };
+    taskList.appendChild(li);
+  });
+}
+function addTask(){
+  const v = taskInput.value.trim();
+  if(!v) return;
+  tasks.push({text:v, done:false});
+  taskInput.value=''; refresh();
+}
+document.getElementById('addBtn').onclick = addTask;
+taskInput.addEventListener('keydown', e=>{ if(e.key==='Enter') addTask(); });
+refresh();
+</script>
+</body>
+</html>

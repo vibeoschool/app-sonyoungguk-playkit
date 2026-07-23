@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Playkit — 미니 앱 4종</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: radial-gradient(1000px 700px at 50% -10%, #1a1f2b 0%, #0a0b10 55%);
+    color: #eef0f6; min-height: 100vh; padding: 60px 24px;
+  }
+  .wrap { max-width: 900px; margin: 0 auto; }
+  header { text-align: center; margin-bottom: 48px; }
+  h1 { font-size: 40px; font-weight: 800; letter-spacing: -1px; }
+  .sub { color: #8a92a3; margin-top: 10px; font-size: 16px; }
+  .grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 20px; }
+  @media (max-width: 720px){ .grid { grid-template-columns: 1fr; } }
+  a.card {
+    display: block; text-decoration: none; color: inherit;
+    background: linear-gradient(180deg,#181b22,#1f2530);
+    border: 1px solid #2a303c; border-radius: 20px; padding: 28px;
+    transition: .2s;
+  }
+  a.card:hover { transform: translateY(-4px); border-color: #4a5468; }
+  .emoji { font-size: 44px; margin-bottom: 16px; }
+  .tag { display:inline-block; font-size: 11px; font-weight: 700; letter-spacing:.5px; text-transform: uppercase; padding: 3px 8px; border-radius: 6px; margin-bottom: 12px; }
+  .t1 { background: rgba(79,209,197,.15); color: #4fd1c5; }
+  .t2 { background: rgba(124,140,255,.15); color: #7c8cff; }
+  .t3 { background: rgba(255,107,91,.15); color: #ff6b5b; }
+  .t4 { background: rgba(255,207,91,.15); color: #ffcf5b; }
+  a.card h2 { font-size: 20px; margin-bottom: 8px; }
+  a.card p { color: #8a92a3; font-size: 14px; line-height: 1.5; }
+  footer { text-align: center; margin-top: 48px; color: #5a6270; font-size: 13px; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Playkit</h1>
+      <p class="sub">빌드 없이 바로 열리는 미니 앱 <span id="appCount">4</span>종 · 하나의 폴더에</p>
+    </header>
+    <div class="grid">
+      <a class="card" href="focus.html">
+        <div class="emoji">⏱️</div>
+        <span class="tag t1">생산성</span>
+        <h2>Focus</h2>
+        <p>뽀모도로 집중 타이머와 할 일 목록. 25분 집중, 세션 카운트 자동 기록.</p>
+      </a>
+      <a class="card" href="kaleido.html">
+        <div class="emoji">🎨</div>
+        <span class="tag t2">창의적 장난감</span>
+        <h2>Kaleido</h2>
+        <p>마우스 드래그로 그리는 대칭 만화경. 무지개 색과 거울 모드, PNG 저장.</p>
+      </a>
+      <a class="card" href="colorrush.html">
+        <div class="emoji">🌈</div>
+        <span class="tag t3">게임</span>
+        <h2>Color Rush</h2>
+        <p>글자에 칠해진 색을 빠르게 맞히는 반사신경 게임. 스트룹 효과 도전!</p>
+      </a>
+      <a class="card" href="dice.html">
+        <div class="emoji">🎲</div>
+        <span class="tag t4">도구</span>
+        <h2>Dice</h2>
+        <p>주사위를 1~5개까지 굴려 결과와 합계를 확인. 보드게임이나 무작위 선택에 딱.</p>
+      </a>
+    </div>
+    <footer>각 카드를 클릭하면 앱이 열립니다 · 오프라인에서도 작동</footer>
+  </div>
+<script>
+  // 앱 카드 개수를 세어 부제와 탭 제목의 숫자를 자동으로 맞춘다(앱을 추가/삭제해도 자동 갱신)
+  const appCount = document.querySelectorAll('.grid a.card').length;
+  document.getElementById('appCount').textContent = appCount;
+  document.title = `Playkit — 미니 앱 ${appCount}종`;
+</script>
+</body>
+</html>

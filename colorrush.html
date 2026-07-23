@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Color Rush — 반사신경 게임</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #0a0b10; color: #eef0f6; min-height: 100vh;
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+    user-select: none;
+  }
+  .game {
+    width: 100%; max-width: 420px; text-align: center;
+  }
+  .top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 20px; }
+  .top .score { font-size: 40px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .top .best { color: #7a8296; font-size: 14px; }
+  .bar-wrap { height: 8px; background: #1a1d27; border-radius: 4px; overflow: hidden; margin-bottom: 20px; }
+  .bar { height: 100%; width: 100%; background: linear-gradient(90deg,#4fd1c5,#ffcf5b,#ff6b5b); transition: width .1s linear; }
+  .prompt { font-size: 15px; color: #9aa2b4; margin-bottom: 8px; min-height: 20px; }
+  .target {
+    font-size: 30px; font-weight: 800; margin-bottom: 20px; min-height: 40px;
+    transition: color .15s;
+  }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .tile {
+    aspect-ratio: 1; border-radius: 18px; border: none; cursor: pointer;
+    font-size: 20px; font-weight: 800; color: rgba(0,0,0,.55);
+    transition: transform .08s; display: flex; align-items: center; justify-content: center;
+  }
+  .tile:active { transform: scale(.94); }
+  .overlay {
+    position: fixed; inset: 0; background: rgba(10,11,16,.92); backdrop-filter: blur(6px);
+    display: flex; align-items: center; justify-content: center; flex-direction: column; z-index: 20;
+  }
+  .overlay h1 { font-size: 30px; margin-bottom: 8px; }
+  .overlay p { color: #9aa2b4; margin-bottom: 6px; }
+  .overlay .big { font-size: 56px; font-weight: 800; margin: 10px 0; }
+  .overlay button {
+    margin-top: 20px; padding: 14px 34px; border-radius: 14px; border: none;
+    background: #4fd1c5; color: #052b27; font-size: 16px; font-weight: 800; cursor: pointer;
+  }
+  .rules { color: #6a7285; font-size: 12px; margin-top: 18px; line-height: 1.6; }
+  .hidden { display: none !important; }
+
+  .home-btn {
+    position: fixed; top: 16px; left: 16px; z-index: 100;
+    width: 40px; height: 40px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.14);
+    color: #eef0f6; text-decoration: none;
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+    transition: .15s;
+  }
+  .home-btn:hover { background: rgba(255,255,255,.16); transform: translateY(-1px); }
+</style>
+</head>
+<body>
+  <a href="index.html" class="home-btn" aria-label="홈으로" title="홈으로">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
+  </a>
+  <div class="game">
+    <div class="top">
+      <div class="score" id="score">0</div>
+      <div class="best">최고 <span id="best">0</span></div>
+    </div>
+    <div class="bar-wrap"><div class="bar" id="bar"></div></div>
+    <div class="prompt" id="prompt">글자의 <b>색깔</b>과 같은 타일을 누르세요</div>
+    <div class="target" id="target">준비</div>
+    <div class="grid" id="grid"></div>
+    <div class="rules">글자가 <b>뜻하는 색</b>이 아니라 <b>실제 칠해진 색</b>과 같은 타일을 빠르게!<br>정답마다 시간이 점점 짧아집니다.</div>
+  </div>
+
+  <div class="overlay" id="start">
+    <h1>Color Rush 🎨</h1>
+    <p>글자에 <b>칠해진 색</b>과 같은 색 타일을 누르세요.</p>
+    <p>글자가 말하는 단어에 속지 마세요!</p>
+    <button id="startBtn">시작하기</button>
+  </div>
+
+  <div class="overlay hidden" id="end">
+    <h1>게임 끝!</h1>
+    <p>점수</p>
+    <div class="big" id="finalScore">0</div>
+    <p id="newBest" class="hidden">🏆 신기록!</p>
+    <button id="againBtn">다시 하기</button>
+  </div>
+
+<script>
+const COLORS = [
+  {name:'빨강', hex:'#ff5b5b'},
+  {name:'파랑', hex:'#5b8cff'},
+  {name:'초록', hex:'#4fd16b'},
+  {name:'노랑', hex:'#ffd24f'},
+  {name:'보라', hex:'#b45bff'},
+  {name:'주황', hex:'#ff9a3d'},
+];
+const grid = document.getElementById('grid');
+const target = document.getElementById('target');
+const scoreEl = document.getElementById('score');
+const bestEl = document.getElementById('best');
+const bar = document.getElementById('bar');
+
+let score=0, best=+(localStorage.getItem('colorrush_best')||0), timeLeft=0, timeMax=0, raf=null, answer=null, lastTs=0;
+bestEl.textContent = best;
+
+function pick(n){ // n distinct colors
+  const pool=[...COLORS]; const out=[];
+  for(let i=0;i<n;i++){ out.push(pool.splice(Math.floor(Math.random()*pool.length),1)[0]); }
+  return out;
+}
+function round(){
+  const opts = pick(4);
+  const correct = opts[Math.floor(Math.random()*4)];
+  answer = correct.hex;
+  // word says a random color name (stroop effect), but painted with correct color
+  const wordName = COLORS[Math.floor(Math.random()*COLORS.length)].name;
+  target.textContent = wordName;
+  target.style.color = correct.hex;
+
+  grid.innerHTML='';
+  opts.forEach(o=>{
+    const b=document.createElement('button');
+    b.className='tile'; b.style.background=o.hex; b.textContent=o.name;
+    b.onclick=()=>choose(o.hex);
+    grid.appendChild(b);
+  });
+  timeMax = Math.max(700, 2200 - score*70);
+  timeLeft = timeMax;
+  lastTs = 0;
+  cancelAnimationFrame(raf);
+  raf = requestAnimationFrame(loop);
+}
+function loop(ts){
+  if(!lastTs) lastTs=ts;
+  timeLeft -= (ts-lastTs); lastTs=ts;
+  bar.style.width = Math.max(0,(timeLeft/timeMax*100))+'%';
+  if(timeLeft<=0){ gameOver(); return; }
+  raf = requestAnimationFrame(loop);
+}
+function choose(hex){
+  if(hex===answer){
+    score++; scoreEl.textContent=score; round();
+  } else {
+    gameOver();
+  }
+}
+function gameOver(){
+  cancelAnimationFrame(raf);
+  document.getElementById('finalScore').textContent = score;
+  const nb = score>best;
+  if(nb){ best=score; localStorage.setItem('colorrush_best',best); bestEl.textContent=best; }
+  document.getElementById('newBest').classList.toggle('hidden', !nb);
+  document.getElementById('end').classList.remove('hidden');
+}
+function startGame(){
+  score=0; scoreEl.textContent=0;
+  document.getElementById('start').classList.add('hidden');
+  document.getElementById('end').classList.add('hidden');
+  round();
+}
+document.getElementById('startBtn').onclick=startGame;
+document.getElementById('againBtn').onclick=startGame;
+</script>
+</body>
+</html>

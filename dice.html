@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dice — 주사위 굴리기</title>
+<style>
+  :root {
+    --bg: #0a0b10;
+    --accent: #ffcf5b;
+    --accent2: #4fd1c5;
+    --text: #eef0f6;
+    --muted: #8a92a3;
+    --line: #2a303c;
+    --pip: #1a1d27;
+    --die: 54px;
+    --half: 27px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: radial-gradient(1000px 700px at 50% -10%, #1a1f2b 0%, var(--bg) 55%);
+    color: var(--text); min-height: 100vh;
+    display: flex; align-items: center; justify-content: center; padding: 24px;
+    user-select: none;
+  }
+  .app { width: 100%; max-width: 440px; text-align: center; }
+  h1 { font-size: 15px; letter-spacing: .5px; color: var(--muted); font-weight: 600; text-transform: uppercase; margin-bottom: 22px; }
+
+  .count { display: flex; gap: 8px; justify-content: center; margin-bottom: 24px; }
+  .count button {
+    width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--line);
+    background: transparent; color: var(--muted); font-size: 15px; font-weight: 700;
+    cursor: pointer; transition: .15s;
+  }
+  .count button.active { background: var(--accent); color: #2b2405; border-color: var(--accent); }
+
+  /* 위에서 내려다본 상자(트레이) */
+  .tray {
+    position: relative; width: min(86vw, 360px); aspect-ratio: 1; margin: 0 auto 24px;
+    border-radius: 22px; padding: 16px; cursor: pointer;
+    background: radial-gradient(130% 130% at 50% 28%, #16493f 0%, #0d332c 72%);
+    box-shadow:
+      inset 0 0 0 3px rgba(255,255,255,.04),
+      inset 0 12px 32px rgba(0,0,0,.55),
+      inset 0 -8px 22px rgba(0,0,0,.45),
+      0 20px 55px rgba(0,0,0,.5);
+  }
+  /* 주사위가 굴러다니는 바닥(벽 안쪽 영역) — 위에서 보는 원근감 부여 */
+  .floor {
+    position: absolute; inset: 16px; border-radius: 12px; overflow: hidden;
+    box-shadow: inset 0 2px 10px rgba(0,0,0,.5);
+  }
+
+  /* 3D 주사위: 위치 이동용 래퍼 + 그 안에서 회전하는 큐브 */
+  .die {
+    position: absolute; top: 0; left: 0; width: var(--die); height: var(--die);
+    perspective: 600px;
+    filter: drop-shadow(0 6px 6px rgba(0,0,0,.45));
+    will-change: transform;
+  }
+  .cube {
+    position: relative; width: 100%; height: 100%;
+    transform-style: preserve-3d;
+    will-change: transform;
+  }
+  .face {
+    position: absolute; width: var(--die); height: var(--die);
+    border-radius: 11px;
+    background: linear-gradient(150deg, #ffffff, #dfe3ee);
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,.06);
+    display: grid; grid-template-columns: repeat(3,1fr); grid-template-rows: repeat(3,1fr);
+    padding: 8px; gap: 2px;
+    backface-visibility: hidden;
+  }
+  .f1 { transform: translateZ(var(--half)); }
+  .f6 { transform: rotateY(180deg) translateZ(var(--half)); }
+  .f3 { transform: rotateY(90deg)  translateZ(var(--half)); }
+  .f4 { transform: rotateY(-90deg) translateZ(var(--half)); }
+  .f2 { transform: rotateX(90deg)  translateZ(var(--half)); }
+  .f5 { transform: rotateX(-90deg) translateZ(var(--half)); }
+
+  .pip {
+    align-self: center; justify-self: center;
+    width: 9px; height: 9px; border-radius: 50%; background: var(--pip);
+    box-shadow: inset 0 1px 1px rgba(0,0,0,.3);
+  }
+  .p1 { grid-area: 1/1; } .p2 { grid-area: 1/2; } .p3 { grid-area: 1/3; }
+  .p4 { grid-area: 2/1; } .p5 { grid-area: 2/2; } .p6 { grid-area: 2/3; }
+  .p7 { grid-area: 3/1; } .p8 { grid-area: 3/2; } .p9 { grid-area: 3/3; }
+
+  /* 화면(트레이) 중앙에 뜨는 결과 */
+  .result {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    opacity: 0; transform: scale(.8); pointer-events: none;
+    transition: opacity .35s ease, transform .4s cubic-bezier(.34,1.56,.64,1);
+  }
+  .result.show { opacity: 1; transform: scale(1); }
+  .result .chip {
+    background: rgba(8,12,16,.86); backdrop-filter: blur(4px);
+    border: 1px solid rgba(255,255,255,.1); border-radius: 22px;
+    padding: 18px 34px; box-shadow: 0 16px 44px rgba(0,0,0,.6);
+  }
+  .result .sum {
+    font-size: 60px; font-weight: 800; line-height: 1; color: #fff;
+    font-variant-numeric: tabular-nums; text-shadow: 0 2px 16px rgba(0,0,0,.5);
+  }
+  .result .detail { margin-top: 8px; font-size: 13px; color: #cdd3e0; }
+
+  .roll-btn {
+    width: 100%; padding: 16px; border-radius: 14px; border: none;
+    background: var(--accent2); color: #052b27; font-size: 17px; font-weight: 800;
+    cursor: pointer; transition: .15s;
+  }
+  .roll-btn:hover { transform: translateY(-2px); }
+  .roll-btn:active { transform: translateY(0); }
+  .roll-btn:disabled { opacity: .55; cursor: default; transform: none; }
+
+  .hint { margin-top: 14px; color: var(--muted); font-size: 12px; }
+
+  .home-btn {
+    position: fixed; top: 16px; left: 16px; z-index: 100;
+    width: 40px; height: 40px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.14);
+    color: #eef0f6; text-decoration: none;
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+    transition: .15s;
+  }
+  .home-btn:hover { background: rgba(255,255,255,.16); transform: translateY(-1px); }
+</style>
+</head>
+<body>
+  <a href="index.html" class="home-btn" aria-label="홈으로" title="홈으로">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
+  </a>
+  <div class="app">
+    <h1>주사위 굴리기</h1>
+
+    <div class="count" id="count">
+      <button data-n="1">1</button>
+      <button data-n="2" class="active">2</button>
+      <button data-n="3">3</button>
+      <button data-n="4">4</button>
+      <button data-n="5">5</button>
+    </div>
+
+    <div class="tray" id="tray">
+      <div class="floor" id="floor"></div>
+      <div class="result" id="result">
+        <div class="chip">
+          <div class="sum" id="sum">0</div>
+          <div class="detail" id="detail"></div>
+        </div>
+      </div>
+    </div>
+
+    <button class="roll-btn" id="rollBtn">🎲 굴리기</button>
+    <div class="hint">상자를 눌러도 굴러갑니다</div>
+  </div>
+
+<script>
+// 주사위 눈(1~6)에 대응하는 pip 위치 (3x3 격자 칸 번호)
+const FACES = {
+  1: [5],
+  2: [1, 9],
+  3: [1, 5, 9],
+  4: [1, 3, 7, 9],
+  5: [1, 3, 5, 7, 9],
+  6: [1, 3, 4, 6, 7, 9],
+};
+// 각 눈을 카메라 쪽(정면)으로 보이게 하는 큐브 회전 [rotateX, rotateY] (초기 표시용)
+const SHOW = { 1:[0,0], 2:[-90,0], 3:[0,-90], 4:[0,90], 5:[90,0], 6:[0,180] };
+
+// 큐브가 rotateX(rx)rotateY(ry)만큼 돌아간 상태에서, 카메라(+Z)를 향한 면의 눈을 계산한다.
+// 큐브 6면의 바깥 법선(로컬)과 눈: +Z=1, -Z=6, +X=3, -X=4, -Y=2, +Y=5
+function showingFace(rx, ry){
+  const a = rx * Math.PI / 180, b = ry * Math.PI / 180;
+  const ca = Math.cos(a), sa = Math.sin(a), cb = Math.cos(b), sb = Math.sin(b);
+  // M = Rx(a)·Ry(b) 의 3행(월드 Z 성분) — 각 면 법선과 내적하면 카메라 쪽 정도
+  const mz = [-ca * sb, sa, ca * cb];
+  const faces = [
+    [1, [0, 0, 1]], [6, [0, 0, -1]], [3, [1, 0, 0]],
+    [4, [-1, 0, 0]], [2, [0, -1, 0]], [5, [0, 1, 0]],
+  ];
+  let best = -Infinity, val = 1;
+  for(const [v, n] of faces){
+    const z = mz[0] * n[0] + mz[1] * n[1] + mz[2] * n[2];
+    if(z > best){ best = z; val = v; }
+  }
+  return val;
+}
+
+// 물리 상수
+const FRICTION = 0.965;     // 마찰(매 프레임 속도 감소 → 서서히 멈춤)
+const WALL_BOUNCE = 0.66;   // 벽에 튕길 때 남는 속도 비율
+const STOP_SPEED = 0.4;     // 이 속도 아래면 멈춘 것으로 간주
+const ROLL_K = 2.3;         // 1px 이동당 큐브가 구르는 각도(도) — 진짜 구르는 느낌
+const R = 27;               // 주사위 반지름(크기의 절반)
+
+const floor = document.getElementById('floor');
+const tray = document.getElementById('tray');
+const result = document.getElementById('result');
+const sumEl = document.getElementById('sum');
+const detailEl = document.getElementById('detail');
+const rollBtn = document.getElementById('rollBtn');
+
+let count = 2;
+let dice = [];
+let animating = false;
+let rafId = 0;
+let floorW = 0, floorH = 0;
+
+const rand = (min, max) => Math.random() * (max - min) + min;
+const rollOne = () => Math.floor(Math.random() * 6) + 1;
+
+function measure(){
+  floorW = floor.clientWidth;
+  floorH = floor.clientHeight;
+  if(!floorW){
+    const rectW = tray.getBoundingClientRect().width;
+    const vw = window.innerWidth || 360;
+    floorW = floorH = Math.round(rectW ? rectW - 32 : Math.min(vw * 0.86, 360) - 32);
+  }
+  if(!floorW || floorW <= 0) floorW = floorH = 328; // 최후의 폴백(측정 불가 환경)
+}
+
+// 큐브 6면을 만든다(값은 고정) — 회전만으로 굴러가는 모습을 표현
+function buildCube(){
+  const cube = document.createElement('div');
+  cube.className = 'cube';
+  for(let v = 1; v <= 6; v++){
+    const face = document.createElement('div');
+    face.className = 'face f' + v;
+    FACES[v].forEach(spot => {
+      const pip = document.createElement('div');
+      pip.className = 'pip p' + spot;
+      face.appendChild(pip);
+    });
+    cube.appendChild(face);
+  }
+  return cube;
+}
+
+function drawDie(d){
+  d.el.style.transform = `translate(${d.x - R}px, ${d.y - R}px)`;
+  d.cube.style.transform = `rotateX(${d.rx}deg) rotateY(${d.ry}deg)`;
+}
+
+function buildDice(n){
+  cancelAnimationFrame(rafId);
+  animating = false;
+  floor.querySelectorAll('.die').forEach(el => el.remove());
+  dice = [];
+  measure();
+  for(let i = 0; i < n; i++){
+    const el = document.createElement('div');
+    el.className = 'die';
+    const cube = buildCube();
+    el.appendChild(cube);
+    floor.appendChild(el);
+    const face = rollOne();
+    const [rx, ry] = SHOW[face];
+    const d = { el, cube, x: 0, y: 0, vx: 0, vy: 0, rx: rx - 12, ry: ry + 16, face };
+    placeInitial(d);
+    drawDie(d);
+    dice.push(d);
+  }
+  hideResult();
+}
+
+// 서로 겹치지 않게 무작위 위치에 놓는다
+function placeInitial(d){
+  const pad = R + 4;
+  for(let tries = 0; tries < 30; tries++){
+    d.x = rand(pad, floorW - pad);
+    d.y = rand(pad, floorH - pad);
+    let ok = true;
+    for(const o of dice){
+      if(Math.hypot(o.x - d.x, o.y - d.y) < R * 2 + 4){ ok = false; break; }
+    }
+    if(ok) return;
+  }
+}
+
+function roll(){
+  if(animating) return;
+  measure();
+  hideResult();
+  dice.forEach(d => {
+    d.cube.style.transition = '';        // 구르는 동안엔 트랜지션 없이 매 프레임 직접 회전
+    const speed = rand(9, 14);
+    const dir = rand(0, Math.PI * 2);
+    d.vx = Math.cos(dir) * speed;
+    d.vy = Math.sin(dir) * speed;
+  });
+  animating = true;
+  rollBtn.disabled = true;
+  rafId = requestAnimationFrame(step);
+}
+
+function step(){
+  // 1) 이동 + 마찰 감속 + 벽 충돌
+  for(const d of dice){
+    d.x += d.vx; d.y += d.vy;
+    d.vx *= FRICTION; d.vy *= FRICTION;
+    // 이동 방향으로 큐브를 굴린다(진짜 구르는 회전)
+    d.rx += d.vy * ROLL_K;
+    d.ry -= d.vx * ROLL_K;
+
+    if(d.x < R){ d.x = R; d.vx = Math.abs(d.vx) * WALL_BOUNCE; }
+    if(d.x > floorW - R){ d.x = floorW - R; d.vx = -Math.abs(d.vx) * WALL_BOUNCE; }
+    if(d.y < R){ d.y = R; d.vy = Math.abs(d.vy) * WALL_BOUNCE; }
+    if(d.y > floorH - R){ d.y = floorH - R; d.vy = -Math.abs(d.vy) * WALL_BOUNCE; }
+  }
+
+  // 2) 주사위끼리 충돌
+  for(let i = 0; i < dice.length; i++){
+    for(let j = i + 1; j < dice.length; j++){
+      resolveCollision(dice[i], dice[j]);
+    }
+  }
+
+  // 3) 그리기 + 멈췄는지 확인
+  let moving = false;
+  for(const d of dice){
+    if(Math.hypot(d.vx, d.vy) > STOP_SPEED) moving = true;
+    drawDie(d);
+  }
+
+  if(moving){
+    rafId = requestAnimationFrame(step);
+  } else {
+    settle();
+  }
+}
+
+// 두 주사위를 원으로 보고 충돌 처리(같은 질량, 겹침 분리 + 속도 교환)
+function resolveCollision(a, b){
+  const dx = b.x - a.x, dy = b.y - a.y;
+  let dist = Math.hypot(dx, dy);
+  const min = R * 2;
+  if(dist === 0) dist = 0.01;
+  if(dist < min){
+    const nx = dx / dist, ny = dy / dist;
+    const overlap = (min - dist) / 2;
+    a.x -= nx * overlap; a.y -= ny * overlap;
+    b.x += nx * overlap; b.y += ny * overlap;
+    const va = a.vx * nx + a.vy * ny;
+    const vb = b.vx * nx + b.vy * ny;
+    const diff = vb - va;
+    a.vx += diff * nx; a.vy += diff * ny;
+    b.vx -= diff * nx; b.vy -= diff * ny;
+  }
+}
+
+// 멈추면 가장 가까운 면으로 살짝만 정렬하고, 그때 위를 향한 눈을 읽는다
+function settle(){
+  dice.forEach(d => {
+    d.vx = d.vy = 0;
+    // 현재 회전에서 가장 가까운 90° 자세(자연스럽게 한 면으로 안착, 최대 45°만 회전)
+    const snapRx = Math.round(d.rx / 90) * 90;
+    const snapRy = Math.round(d.ry / 90) * 90;
+    d.value = showingFace(snapRx, snapRy);   // 실제로 정면을 향한 눈을 읽는다
+    d.rx = snapRx - 8;                        // 값은 그대로 두고 살짝 기울여 3D 유지
+    d.ry = snapRy + 12;
+    d.cube.style.transition = 'transform .3s cubic-bezier(.2,.7,.3,1)';
+    d.cube.style.transform = `rotateX(${d.rx}deg) rotateY(${d.ry}deg)`;
+  });
+  setTimeout(() => {
+    dice.forEach(d => { d.cube.style.transition = ''; });
+    showResult();
+    animating = false;
+    rollBtn.disabled = false;
+  }, 340);
+}
+
+function showResult(){
+  const vals = dice.map(d => d.value);
+  const sum = vals.reduce((a, b) => a + b, 0);
+  sumEl.textContent = sum;
+  detailEl.textContent = vals.join(' + ');
+  result.classList.add('show');
+}
+function hideResult(){ result.classList.remove('show'); }
+
+document.querySelectorAll('#count button').forEach(btn => {
+  btn.onclick = () => {
+    if(animating) return;
+    document.querySelectorAll('#count button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    count = +btn.dataset.n;
+    buildDice(count);
+  };
+});
+rollBtn.onclick = roll;
+tray.onclick = roll;
+
+window.addEventListener('resize', () => {
+  measure();
+  dice.forEach(d => {
+    d.x = Math.max(R, Math.min(floorW - R, d.x));
+    d.y = Math.max(R, Math.min(floorH - R, d.y));
+    drawDie(d);
+  });
+});
+
+// 상자 크기가 잡힌 뒤 주사위를 배치한다
+function initWhenReady(){
+  measure();
+  if(!floorW){ setTimeout(initWhenReady, 50); return; }
+  buildDice(count);
+}
+initWhenReady();
+</script>
+</body>
+</html>
