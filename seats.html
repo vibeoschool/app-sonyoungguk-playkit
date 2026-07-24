@@ -6,22 +6,26 @@
 <title>Seats — 랜덤 자리 배정</title>
 <style>
   :root {
-    --bg: #0a0b10;
-    --panel: #181b22;
-    --panel2: #1f2530;
-    --text: #eef0f6;
-    --muted: #8a92a3;
-    --line: #2a303c;
-    --teal: #4fd1c5;
-    --indigo: #7c8cff;
-    --rose: #ff6b5b;
-    --amber: #ffcf5b;
+    --bg: #07080d;
+    --panel: rgba(255,255,255,.05);
+    --panel2: rgba(255,255,255,.018);
+    --field: #0b0d13;
+    --text: #f2f4fa;
+    --muted: #8f97a8;
+    --line: rgba(255,255,255,.08);
+    --teal: #5eead4;
+    --indigo: #8b9dff;
+    --rose: #ff7a6b;
+    --amber: #ffd166;
     --seat: clamp(42px, 8.2vw, 74px);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
-    background: radial-gradient(1100px 720px at 50% -10%, #1a1f2b 0%, var(--bg) 55%);
+    background:
+      radial-gradient(900px 620px at 12% -12%, rgba(94,234,212,.07), transparent 60%),
+      radial-gradient(1000px 700px at 88% -18%, rgba(139,157,255,.08), transparent 60%),
+      var(--bg);
     color: var(--text); min-height: 100vh; padding: 24px 16px 48px;
   }
   .wrap { max-width: 1120px; margin: 0 auto; }
@@ -36,7 +40,8 @@
   .col { display: flex; flex-direction: column; gap: 16px; }
   .panel {
     background: linear-gradient(180deg, var(--panel), var(--panel2));
-    border: 1px solid var(--line); border-radius: 18px; padding: 18px;
+    border: 1px solid var(--line); border-radius: 20px; padding: 18px;
+    box-shadow: 0 18px 44px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.05);
   }
   .panel h2 { font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
   .panel h2 .em { font-size: 16px; }
@@ -46,7 +51,7 @@
 
   textarea {
     width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line);
-    background: var(--bg); color: var(--text); font-size: 14px; resize: none; outline: none;
+    background: var(--field); color: var(--text); font-size: 14px; resize: none; outline: none;
     font-family: inherit; line-height: 1.5;
   }
   textarea:focus { border-color: var(--teal); }
@@ -66,7 +71,7 @@
   label.fld { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
   .stepper { display: flex; }
   .stepper button {
-    width: 38px; border: 1px solid var(--line); background: var(--panel2); color: var(--text);
+    width: 38px; border: 1px solid var(--line); background: var(--panel); color: var(--text);
     font-size: 16px; font-weight: 700; cursor: pointer;
   }
   .stepper button:first-child { border-radius: 10px 0 0 10px; }
@@ -74,7 +79,7 @@
   .stepper button:hover { background: rgba(255,255,255,.06); }
   .stepper input {
     width: 100%; border: 1px solid var(--line); border-left: none; border-right: none;
-    background: var(--bg); color: var(--text); text-align: center; font-size: 14px; font-weight: 700;
+    background: var(--field); color: var(--text); text-align: center; font-size: 14px; font-weight: 700;
     outline: none; -moz-appearance: textfield;
   }
   .stepper input::-webkit-outer-spin-button, .stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
@@ -166,11 +171,12 @@
   .drawbar h3 { font-size: 15px; font-weight: 800; display: flex; align-items: center; gap: 8px; }
   .drawbar p { font-size: 12px; color: #bff0e9; margin-top: 2px; }
   .btn-draw {
-    background: var(--amber); color: #2b2405; font-weight: 800; font-size: 14px;
+    background: linear-gradient(135deg, #ffd166, #f7b93e); color: #2b2405; font-weight: 800; font-size: 14px;
     padding: 12px 22px; border-radius: 12px; border: none; cursor: pointer; transition: .15s;
     display: inline-flex; align-items: center; gap: 8px;
+    box-shadow: 0 8px 24px rgba(255,209,102,.22);
   }
-  .btn-draw:hover { transform: translateY(-2px); }
+  .btn-draw:hover { transform: translateY(-2px); box-shadow: 0 14px 32px rgba(255,209,102,.3); }
 
   /* modals */
   .overlay {
@@ -180,9 +186,10 @@
   }
   .overlay.show { opacity: 1; pointer-events: auto; }
   .modal {
-    background: linear-gradient(180deg, var(--panel), var(--panel2)); border: 1px solid var(--line);
-    border-radius: 18px; padding: 22px; max-width: 340px; width: 100%; text-align: center;
+    background: linear-gradient(180deg, #151922, #10131b); border: 1px solid var(--line);
+    border-radius: 20px; padding: 22px; max-width: 340px; width: 100%; text-align: center;
     transform: scale(.92); transition: transform .25s;
+    box-shadow: 0 30px 80px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.06);
   }
   .overlay.show .modal { transform: scale(1); }
   .modal .m-icon { width: 46px; height: 46px; border-radius: 50%; margin: 0 auto 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; }

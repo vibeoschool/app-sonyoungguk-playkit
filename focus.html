@@ -6,19 +6,23 @@
 <title>Focus — 뽀모도로 타이머</title>
 <style>
   :root {
-    --bg: #0f1115;
-    --panel: #181b22;
-    --panel2: #1f2530;
-    --accent: #ff6b5b;
-    --accent2: #4fd1c5;
-    --text: #e6e9ef;
-    --muted: #8a92a3;
-    --line: #2a303c;
+    --bg: #07080d;
+    --panel: rgba(255,255,255,.045);
+    --panel2: rgba(255,255,255,.015);
+    --accent: #ff7a6b;
+    --accent2: #5eead4;
+    --text: #f2f4fa;
+    --muted: #8f97a8;
+    --line: rgba(255,255,255,.08);
+    --field: #0b0d13;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: radial-gradient(1200px 800px at 70% -10%, #1a1f2b 0%, var(--bg) 55%);
+    background:
+      radial-gradient(900px 620px at 15% -12%, rgba(255,122,107,.07), transparent 60%),
+      radial-gradient(1000px 700px at 85% -18%, rgba(94,234,212,.07), transparent 60%),
+      var(--bg);
     color: var(--text);
     min-height: 100vh;
     display: flex;
@@ -37,8 +41,9 @@
   .card {
     background: linear-gradient(180deg, var(--panel) 0%, var(--panel2) 100%);
     border: 1px solid var(--line);
-    border-radius: 20px;
+    border-radius: 22px;
     padding: 28px;
+    box-shadow: 0 18px 44px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.05);
   }
   h1 { font-size: 15px; letter-spacing: .5px; color: var(--muted); font-weight: 600; text-transform: uppercase; margin-bottom: 20px; }
   .modes { display: flex; gap: 8px; margin-bottom: 24px; }
@@ -65,8 +70,8 @@
     padding: 12px 22px; border-radius: 12px; border: none; font-size: 14px;
     font-weight: 700; cursor: pointer; transition: .15s;
   }
-  .btn-primary { background: var(--accent2); color: #06231f; }
-  .btn-primary:hover { transform: translateY(-1px); }
+  .btn-primary { background: linear-gradient(135deg, #5eead4, #38c9b2); color: #052b25; box-shadow: 0 8px 22px rgba(94,234,212,.22); }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 12px 28px rgba(94,234,212,.3); }
   .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--line) !important; }
   .stat { color: var(--muted); font-size: 12px; margin-top: 18px; }
   .stat b { color: var(--text); }
@@ -75,7 +80,7 @@
   .add { display: flex; gap: 8px; margin-bottom: 16px; }
   .add input {
     flex: 1; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--line);
-    background: var(--bg); color: var(--text); font-size: 14px; outline: none;
+    background: var(--field); color: var(--text); font-size: 14px; outline: none;
   }
   .add input:focus { border-color: var(--accent2); }
   .add button {
@@ -85,7 +90,7 @@
   ul { list-style: none; display: flex; flex-direction: column; gap: 8px; max-height: 300px; overflow-y: auto; }
   li {
     display: flex; align-items: center; gap: 12px; padding: 12px 14px;
-    background: var(--bg); border: 1px solid var(--line); border-radius: 10px;
+    background: var(--field); border: 1px solid var(--line); border-radius: 10px;
   }
   li.done .txt { text-decoration: line-through; color: var(--muted); }
   .check {

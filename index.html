@@ -6,38 +6,85 @@
 <title>Playkit — 미니 앱 4종</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #07080d;
+    --text: #f2f4fa;
+    --muted: #8f97a8;
+    --line: rgba(255,255,255,.08);
+    --teal: #5eead4; --indigo: #8b9dff; --rose: #ff7a6b; --amber: #ffd166; --violet: #c4a5ff;
+  }
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    background: radial-gradient(1000px 700px at 50% -10%, #1a1f2b 0%, #0a0b10 55%);
-    color: #eef0f6; min-height: 100vh; padding: 60px 24px;
+    background:
+      radial-gradient(900px 620px at 12% -12%, rgba(94,234,212,.08), transparent 60%),
+      radial-gradient(1000px 700px at 88% -18%, rgba(139,157,255,.09), transparent 60%),
+      radial-gradient(1300px 900px at 50% 125%, rgba(255,122,107,.05), transparent 60%),
+      var(--bg);
+    color: var(--text); min-height: 100vh; padding: 72px 24px 56px;
   }
-  .wrap { max-width: 900px; margin: 0 auto; }
-  header { text-align: center; margin-bottom: 48px; }
-  h1 { font-size: 40px; font-weight: 800; letter-spacing: -1px; }
-  .sub { color: #8a92a3; margin-top: 10px; font-size: 16px; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; }
+  .wrap { max-width: 960px; margin: 0 auto; }
+  header { text-align: center; margin-bottom: 56px; }
+  .crown {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-size: 11px; font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase;
+    color: var(--teal); background: rgba(94,234,212,.08);
+    border: 1px solid rgba(94,234,212,.2); border-radius: 999px;
+    padding: 6px 14px; margin-bottom: 20px;
+  }
+  .crown::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--teal); box-shadow: 0 0 10px var(--teal); }
+  h1 {
+    font-size: clamp(44px, 7vw, 60px); font-weight: 800; letter-spacing: -2px; line-height: 1;
+    background: linear-gradient(180deg, #ffffff 30%, #a9b3c9 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .sub { color: var(--muted); margin-top: 14px; font-size: 16px; letter-spacing: -.2px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 18px; }
   a.card {
+    --glow: var(--teal);
     display: block; text-decoration: none; color: inherit;
-    background: linear-gradient(180deg,#181b22,#1f2530);
-    border: 1px solid #2a303c; border-radius: 20px; padding: 28px;
-    transition: .2s;
+    background: linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.018));
+    border: 1px solid var(--line); border-radius: 22px; padding: 26px;
+    box-shadow: 0 18px 44px rgba(0,0,0,.35);
+    transition: transform .25s cubic-bezier(.2,.7,.3,1), border-color .25s, box-shadow .25s;
+    position: relative; overflow: hidden;
   }
-  a.card:hover { transform: translateY(-4px); border-color: #4a5468; }
-  .emoji { font-size: 44px; margin-bottom: 16px; }
-  .tag { display:inline-block; font-size: 11px; font-weight: 700; letter-spacing:.5px; text-transform: uppercase; padding: 3px 8px; border-radius: 6px; margin-bottom: 12px; }
-  .t1 { background: rgba(79,209,197,.15); color: #4fd1c5; }
-  .t2 { background: rgba(124,140,255,.15); color: #7c8cff; }
-  .t3 { background: rgba(255,107,91,.15); color: #ff6b5b; }
-  .t4 { background: rgba(255,207,91,.15); color: #ffcf5b; }
-  .t5 { background: rgba(159,122,234,.15); color: #b794f4; }
-  a.card h2 { font-size: 20px; margin-bottom: 8px; }
-  a.card p { color: #8a92a3; font-size: 14px; line-height: 1.5; }
-  footer { text-align: center; margin-top: 48px; color: #5a6270; font-size: 13px; }
+  a.card::after {
+    content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    background: radial-gradient(420px 200px at 20% -20%, color-mix(in srgb, var(--glow) 12%, transparent), transparent 70%);
+    opacity: 0; transition: opacity .3s;
+  }
+  a.card:hover { transform: translateY(-5px); border-color: color-mix(in srgb, var(--glow) 45%, transparent); box-shadow: 0 26px 60px rgba(0,0,0,.5), 0 0 40px color-mix(in srgb, var(--glow) 10%, transparent); }
+  a.card:hover::after { opacity: 1; }
+  a.card:nth-child(1) { --glow: var(--teal); }
+  a.card:nth-child(2) { --glow: var(--indigo); }
+  a.card:nth-child(3) { --glow: var(--rose); }
+  a.card:nth-child(4) { --glow: var(--amber); }
+  a.card:nth-child(5) { --glow: var(--violet); }
+  .emoji {
+    font-size: 30px; width: 62px; height: 62px; margin-bottom: 18px;
+    display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.02));
+    border: 1px solid var(--line); border-radius: 18px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+  }
+  .tag {
+    display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; padding: 4px 10px; border-radius: 999px; margin-bottom: 12px;
+  }
+  .t1 { background: rgba(94,234,212,.12); color: var(--teal); }
+  .t2 { background: rgba(139,157,255,.12); color: var(--indigo); }
+  .t3 { background: rgba(255,122,107,.12); color: var(--rose); }
+  .t4 { background: rgba(255,209,102,.12); color: var(--amber); }
+  .t5 { background: rgba(196,165,255,.12); color: var(--violet); }
+  a.card h2 { font-size: 20px; letter-spacing: -.3px; margin-bottom: 8px; }
+  a.card p { color: var(--muted); font-size: 13.5px; line-height: 1.6; }
+  footer { text-align: center; margin-top: 56px; color: #566076; font-size: 12.5px; letter-spacing: .2px; }
 </style>
 </head>
 <body>
   <div class="wrap">
     <header>
+      <div class="crown">Mini App Collection</div>
       <h1>Playkit</h1>
       <p class="sub">빌드 없이 바로 열리는 미니 앱 <span id="appCount">4</span>종 · 하나의 폴더에</p>
     </header>

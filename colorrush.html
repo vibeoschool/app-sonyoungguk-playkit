@@ -8,7 +8,11 @@
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    background: #0a0b10; color: #eef0f6; min-height: 100vh;
+    background:
+      radial-gradient(900px 620px at 15% -12%, rgba(255,122,107,.07), transparent 60%),
+      radial-gradient(1000px 700px at 85% -18%, rgba(139,157,255,.07), transparent 60%),
+      #07080d;
+    color: #f2f4fa; min-height: 100vh;
     display: flex; align-items: center; justify-content: center; padding: 20px;
     user-select: none;
   }
@@ -19,7 +23,7 @@
   .top .score { font-size: 40px; font-weight: 800; font-variant-numeric: tabular-nums; }
   .top .best { color: #7a8296; font-size: 14px; }
   .bar-wrap { height: 8px; background: #1a1d27; border-radius: 4px; overflow: hidden; margin-bottom: 20px; }
-  .bar { height: 100%; width: 100%; background: linear-gradient(90deg,#4fd1c5,#ffcf5b,#ff6b5b); transition: width .1s linear; }
+  .bar { height: 100%; width: 100%; background: linear-gradient(90deg,#5eead4,#ffd166,#ff7a6b); transition: width .1s linear; }
   .prompt { font-size: 15px; color: #9aa2b4; margin-bottom: 8px; min-height: 20px; }
   .target {
     font-size: 30px; font-weight: 800; margin-bottom: 20px; min-height: 40px;
@@ -41,8 +45,10 @@
   .overlay .big { font-size: 56px; font-weight: 800; margin: 10px 0; }
   .overlay button {
     margin-top: 20px; padding: 14px 34px; border-radius: 14px; border: none;
-    background: #4fd1c5; color: #052b27; font-size: 16px; font-weight: 800; cursor: pointer;
+    background: linear-gradient(135deg, #5eead4, #38c9b2); color: #052b25; font-size: 16px; font-weight: 800; cursor: pointer;
+    box-shadow: 0 8px 24px rgba(94,234,212,.25); transition: .15s;
   }
+  .overlay button:hover { transform: translateY(-2px); }
   .rules { color: #6a7285; font-size: 12px; margin-top: 18px; line-height: 1.6; }
   .hidden { display: none !important; }
 
