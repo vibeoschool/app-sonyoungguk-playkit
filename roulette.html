@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Roulette — 번호 룰렛</title>
+<style>
+  :root {
+    --bg: #07080d;
+    --panel: rgba(255,255,255,.05);
+    --panel2: rgba(255,255,255,.018);
+    --field: #0b0d13;
+    --text: #f2f4fa;
+    --muted: #8f97a8;
+    --line: rgba(255,255,255,.08);
+    --teal: #5eead4;
+    --indigo: #8b9dff;
+    --rose: #ff7a6b;
+    --amber: #ffd166;
+    --lime: #7ce38b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    background:
+      radial-gradient(900px 620px at 12% -12%, rgba(124,227,139,.06), transparent 60%),
+      radial-gradient(1000px 700px at 88% -18%, rgba(139,157,255,.08), transparent 60%),
+      var(--bg);
+    color: var(--text); min-height: 100vh; padding: 24px 16px 48px;
+    user-select: none;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; }
+
+  header.top { text-align: center; margin-bottom: 26px; }
+  header.top h1 { font-size: 24px; font-weight: 800; letter-spacing: -.5px; }
+  header.top p { color: var(--muted); font-size: 13px; margin-top: 6px; }
+
+  .layout { display: grid; grid-template-columns: 320px 1fr; gap: 20px; align-items: start; }
+  @media (max-width: 860px) { .layout { grid-template-columns: 1fr; } }
+
+  .col { display: flex; flex-direction: column; gap: 16px; }
+  .panel {
+    background: linear-gradient(180deg, var(--panel), var(--panel2));
+    border: 1px solid var(--line); border-radius: 20px; padding: 18px;
+    box-shadow: 0 18px 44px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.05);
+  }
+  .panel h2 { font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+
+  label.fld { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+  .stepper { display: flex; }
+  .stepper button {
+    width: 42px; border: 1px solid var(--line); background: var(--panel); color: var(--text);
+    font-size: 17px; font-weight: 700; cursor: pointer;
+  }
+  .stepper button:first-child { border-radius: 10px 0 0 10px; }
+  .stepper button:last-child { border-radius: 0 10px 10px 0; }
+  .stepper button:hover { background: rgba(255,255,255,.08); }
+  .stepper input {
+    width: 100%; border: 1px solid var(--line); border-left: none; border-right: none;
+    background: var(--field); color: var(--text); text-align: center; font-size: 16px; font-weight: 800;
+    outline: none; -moz-appearance: textfield; padding: 10px 0;
+  }
+  .stepper input::-webkit-outer-spin-button, .stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .sub-note { font-size: 11.5px; color: var(--muted); margin-top: 8px; line-height: 1.5; }
+
+  .opt-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 2px; font-size: 13px;
+  }
+  .opt-row + .opt-row { border-top: 1px solid var(--line); }
+  .switch { position: relative; width: 42px; height: 24px; flex-shrink: 0; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch .tr {
+    position: absolute; inset: 0; border-radius: 999px; background: rgba(255,255,255,.1);
+    border: 1px solid var(--line); cursor: pointer; transition: .2s;
+  }
+  .switch .tr::after {
+    content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px;
+    border-radius: 50%; background: #cfd6e4; transition: .2s;
+  }
+  .switch input:checked + .tr { background: rgba(124,227,139,.35); border-color: rgba(124,227,139,.5); }
+  .switch input:checked + .tr::after { transform: translateX(18px); background: var(--lime); }
+
+  .btn {
+    font-size: 12px; font-weight: 600; padding: 9px 12px; border-radius: 10px;
+    border: 1px solid var(--line); background: transparent; color: var(--text);
+    cursor: pointer; transition: .15s; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .btn:hover { background: rgba(255,255,255,.06); }
+  .btn.danger { color: var(--rose); border-color: rgba(255,122,107,.3); }
+  .btn.danger:hover { background: rgba(255,122,107,.1); }
+
+  .history-chips { display: flex; flex-wrap: wrap; gap: 6px; min-height: 28px; }
+  .chip-n {
+    font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px;
+    background: rgba(139,157,255,.14); color: var(--indigo); border: 1px solid rgba(139,157,255,.25);
+  }
+  .chip-n.latest { background: rgba(124,227,139,.16); color: var(--lime); border-color: rgba(124,227,139,.4); }
+  .empty-note { font-size: 12px; color: var(--muted); }
+
+  .tips { background: rgba(124,227,139,.05); border-color: rgba(124,227,139,.16); font-size: 12px; color: #b9c3cf; }
+  .tips h2 { color: var(--lime); }
+  .tips ul { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+  .tips li::before { content: "•"; color: var(--lime); margin-right: 6px; }
+
+  /* stage */
+  .stage { display: flex; flex-direction: column; align-items: center; padding: 26px 18px; }
+  .wheel-box { position: relative; width: min(78vw, 420px); aspect-ratio: 1; }
+  .pointer {
+    position: absolute; top: -6px; left: 50%; transform: translateX(-50%); z-index: 5;
+    width: 0; height: 0; border-left: 13px solid transparent; border-right: 13px solid transparent;
+    border-top: 22px solid var(--amber);
+    filter: drop-shadow(0 3px 6px rgba(0,0,0,.5));
+  }
+  canvas { display: block; width: 100%; height: 100%; cursor: pointer; }
+
+  .result {
+    margin-top: 22px; min-height: 64px; display: flex; align-items: center; justify-content: center;
+  }
+  .result .chip {
+    opacity: 0; transform: scale(.7); transition: opacity .3s, transform .4s cubic-bezier(.34,1.56,.64,1);
+    background: linear-gradient(180deg, #151922, #10131b); border: 1px solid rgba(124,227,139,.35);
+    border-radius: 18px; padding: 12px 30px; text-align: center;
+    box-shadow: 0 16px 44px rgba(0,0,0,.5), 0 0 30px rgba(124,227,139,.08);
+  }
+  .result .chip.show { opacity: 1; transform: scale(1); }
+  .result .num { font-size: 36px; font-weight: 800; color: var(--lime); line-height: 1.1; }
+  .result .lbl { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  .hint { margin-top: 12px; color: var(--muted); font-size: 12px; }
+
+  .drawbar {
+    background: linear-gradient(90deg, #14532d, #166534); border: 1px solid rgba(124,227,139,.25);
+    border-radius: 18px; padding: 16px 18px; display: flex; flex-wrap: wrap; gap: 14px;
+    align-items: center; justify-content: space-between;
+  }
+  .drawbar h3 { font-size: 15px; font-weight: 800; }
+  .drawbar p { font-size: 12px; color: #c8f5d2; margin-top: 2px; }
+  .btn-spin {
+    background: linear-gradient(135deg, #7ce38b, #4ade80); color: #052e13; font-weight: 800; font-size: 15px;
+    padding: 13px 26px; border-radius: 12px; border: none; cursor: pointer; transition: .15s;
+    display: inline-flex; align-items: center; gap: 8px;
+    box-shadow: 0 8px 24px rgba(124,227,139,.22);
+  }
+  .btn-spin:hover { transform: translateY(-2px); box-shadow: 0 14px 32px rgba(124,227,139,.3); }
+  .btn-spin:disabled { opacity: .55; cursor: default; transform: none; box-shadow: none; }
+
+  .home-btn {
+    position: fixed; top: 16px; left: 16px; z-index: 60;
+    width: 40px; height: 40px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.14);
+    color: #eef0f6; text-decoration: none;
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); transition: .15s;
+  }
+  .home-btn:hover { background: rgba(255,255,255,.16); transform: translateY(-1px); }
+</style>
+</head>
+<body>
+  <a href="index.html" class="home-btn" aria-label="홈으로" title="홈으로">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
+  </a>
+
+  <div class="wrap">
+    <header class="top">
+      <h1>🎡 Roulette — 번호 룰렛</h1>
+      <p>인원수만큼 칸이 생기는 번호 뽑기 룰렛 · 소리와 함께 빙글빙글</p>
+    </header>
+
+    <div class="layout">
+      <!-- Controls -->
+      <section class="col">
+        <div class="panel">
+          <h2>👥 1. 인원 설정</h2>
+          <label class="fld">학생 수 (2~60)</label>
+          <div class="stepper">
+            <button type="button" id="btn-minus">−</button>
+            <input type="number" id="count-input" min="2" max="60" value="25">
+            <button type="button" id="btn-plus">+</button>
+          </div>
+          <p class="sub-note">1번부터 <b id="count-label">25</b>번까지 룰렛 칸이 자동으로 만들어져요.</p>
+        </div>
+
+        <div class="panel">
+          <h2>⚙️ 2. 옵션</h2>
+          <div class="opt-row">
+            <span>뽑힌 번호 제외</span>
+            <label class="switch"><input type="checkbox" id="opt-exclude"><span class="tr"></span></label>
+          </div>
+          <div class="opt-row">
+            <span>효과음</span>
+            <label class="switch"><input type="checkbox" id="opt-sound" checked><span class="tr"></span></label>
+          </div>
+          <div class="opt-row">
+            <span>뽑기 기록</span>
+            <button class="btn danger" id="btn-reset">↺ 초기화</button>
+          </div>
+          <div class="history-chips" id="history" style="margin-top:10px">
+            <span class="empty-note">아직 뽑은 번호가 없어요.</span>
+          </div>
+        </div>
+
+        <div class="panel tips">
+          <h2>💡 간편 꿀팁</h2>
+          <ul>
+            <li>룰렛 판을 클릭해도 바로 돌아가요</li>
+            <li>뽑힌 번호 제외를 켜면 발표 순서 정하기에 딱</li>
+            <li>가운데 숫자는 남아 있는 칸 수예요</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Wheel -->
+      <section class="col">
+        <div class="panel stage">
+          <div class="wheel-box">
+            <div class="pointer"></div>
+            <canvas id="wheel"></canvas>
+          </div>
+          <div class="result">
+            <div class="chip" id="result-chip">
+              <div class="num" id="result-num">?</div>
+              <div class="lbl">뽑힌 번호</div>
+            </div>
+          </div>
+          <p class="hint">▲ 노란 화살표가 가리키는 칸이 당첨!</p>
+        </div>
+
+        <div class="drawbar">
+          <div>
+            <h3>🎲 번호 뽑을 준비 완료!</h3>
+            <p>버튼을 누르면 룰렛이 돌아갑니다.</p>
+          </div>
+          <button class="btn-spin" id="btn-spin">🎡 돌리기!</button>
+        </div>
+      </section>
+    </div>
+  </div>
+
+<script>
+  // ---------- 상태 ----------
+  let count = 25;
+  let active = [];        // 현재 룰렛에 남아 있는 번호들
+  let history = [];       // 뽑힌 순서 기록
+  let rot = -Math.PI / 2; // 현재 회전각
+  let spinning = false;
+
+  const COLORS = ['#5eead4', '#8b9dff', '#ff7a6b', '#ffd166', '#c4a5ff', '#6ee7f0', '#7ce38b', '#ffa94d'];
+
+  const $ = id => document.getElementById(id);
+  const canvas = $('wheel');
+  const ctx = canvas.getContext('2d');
+  const countInput = $('count-input');
+  const spinBtn = $('btn-spin');
+  const resultChip = $('result-chip');
+
+  // ---------- 사운드 (Web Audio, 외부 파일 없음) ----------
+  let actx = null;
+  function audio() {
+    if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+    if (actx && actx.state === 'suspended') actx.resume();
+    return actx;
+  }
+  function soundOn() { return $('opt-sound').checked; }
+  // 룰렛이 한 칸 지날 때마다 나는 '틱' 소리
+  function tickSound() {
+    const a = soundOn() && audio(); if (!a) return;
+    const t = a.currentTime;
+    const o = a.createOscillator(), g = a.createGain();
+    o.type = 'square';
+    o.frequency.value = 1600 + Math.random() * 400;
+    g.gain.setValueAtTime(.06, t);
+    g.gain.exponentialRampToValueAtTime(.0001, t + .035);
+    o.connect(g); g.connect(a.destination);
+    o.start(t); o.stop(t + .05);
+  }
+  // 당첨 팡파르
+  function fanfare() {
+    const a = soundOn() && audio(); if (!a) return;
+    const t0 = a.currentTime;
+    [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => {
+      const o = a.createOscillator(), g = a.createGain();
+      o.type = 'triangle'; o.frequency.value = f;
+      const t = t0 + i * .09;
+      g.gain.setValueAtTime(.12, t);
+      g.gain.exponentialRampToValueAtTime(.0001, t + .35);
+      o.connect(g); g.connect(a.destination);
+      o.start(t); o.stop(t + .4);
+    });
+  }
+
+  // ---------- 룰렛 그리기 ----------
+  function sizeCanvas() {
+    const box = canvas.parentElement.getBoundingClientRect();
+    const size = Math.max(220, Math.round(box.width || 400));
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = size * dpr;
+    canvas.height = size * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return size;
+  }
+  function fontFor(n) {
+    if (n <= 12) return 22; if (n <= 20) return 17; if (n <= 32) return 14; if (n <= 45) return 12; return 10;
+  }
+  function draw() {
+    const size = sizeCanvas();
+    const cx = size / 2, cy = size / 2;
+    const R = size / 2 - 6;
+    ctx.clearRect(0, 0, size, size);
+
+    const n = active.length;
+    // 바깥 링
+    ctx.beginPath(); ctx.arc(cx, cy, R + 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#151922'; ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(255,255,255,.12)'; ctx.stroke();
+
+    if (n === 0) {
+      ctx.fillStyle = '#8f97a8'; ctx.font = '700 16px sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('모든 번호를 뽑았어요!', cx, cy - 12);
+      ctx.font = '500 13px sans-serif';
+      ctx.fillText('↺ 초기화를 눌러 다시 시작', cx, cy + 14);
+      return;
+    }
+
+    const a = Math.PI * 2 / n;
+    const fs = fontFor(n);
+    for (let i = 0; i < n; i++) {
+      const s = rot + i * a, e = s + a;
+      // 칸
+      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, R, s, e); ctx.closePath();
+      ctx.fillStyle = COLORS[i % COLORS.length];
+      ctx.fill();
+      ctx.lineWidth = 1.5; ctx.strokeStyle = 'rgba(7,8,13,.55)'; ctx.stroke();
+      // 번호
+      const mid = s + a / 2;
+      ctx.save();
+      ctx.translate(cx + Math.cos(mid) * R * .74, cy + Math.sin(mid) * R * .74);
+      ctx.rotate(mid + Math.PI / 2);
+      ctx.fillStyle = '#0a0c14';
+      ctx.font = `800 ${fs}px sans-serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(active[i], 0, 0);
+      ctx.restore();
+    }
+
+    // 중앙 허브: 남은 칸 수
+    ctx.beginPath(); ctx.arc(cx, cy, R * .2, 0, Math.PI * 2);
+    ctx.fillStyle = '#10131b'; ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(255,255,255,.15)'; ctx.stroke();
+    ctx.fillStyle = '#f2f4fa'; ctx.font = `800 ${Math.round(R * .13)}px sans-serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(n, cx, cy - R * .03);
+    ctx.fillStyle = '#8f97a8'; ctx.font = `600 ${Math.round(R * .06)}px sans-serif`;
+    ctx.fillText('칸', cx, cy + R * .09);
+  }
+
+  // 포인터(12시 방향)가 가리키는 칸 인덱스
+  function idxAtPointer() {
+    const n = active.length; if (n === 0) return -1;
+    const a = Math.PI * 2 / n;
+    let d = (-Math.PI / 2 - rot) % (Math.PI * 2);
+    if (d < 0) d += Math.PI * 2;
+    return Math.floor(d / a);
+  }
+
+  // ---------- 돌리기 ----------
+  function spin() {
+    if (spinning || active.length === 0) return;
+    audio(); // 사용자 제스처 시점에 오디오 활성화
+    spinning = true;
+    spinBtn.disabled = true;
+    resultChip.classList.remove('show');
+
+    const dur = 3800 + Math.random() * 1000;            // 3.8~4.8초
+    const start = rot;
+    const delta = (6 + Math.random() * 3) * Math.PI * 2 // 6~9바퀴
+                + Math.random() * Math.PI * 2;          // + 무작위 위치
+    const t0 = performance.now();
+    let lastIdx = idxAtPointer();
+
+    function frame(now) {
+      const t = Math.min(1, (now - t0) / dur);
+      const ease = 1 - Math.pow(1 - t, 3);              // 처음 빠르게 → 서서히 감속
+      rot = start + delta * ease;
+      const idx = idxAtPointer();
+      if (idx !== lastIdx) { tickSound(); lastIdx = idx; }
+      draw();
+      if (t < 1) requestAnimationFrame(frame);
+      else finishSpin();
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function finishSpin() {
+    const i = idxAtPointer();
+    const num = active[i];
+    history.push(num);
+    fanfare();
+    $('result-num').textContent = num + '번';
+    resultChip.classList.add('show');
+    if ($('opt-exclude').checked) active.splice(i, 1);
+    renderHistory();
+    spinning = false;
+    spinBtn.disabled = false;
+    draw();
+  }
+
+  // ---------- 설정/기록 ----------
+  function setCount(v) {
+    count = Math.max(2, Math.min(60, v || 2));
+    countInput.value = count;
+    $('count-label').textContent = count;
+    resetAll(false);
+  }
+  function resetAll(keepCount) {
+    active = Array.from({ length: count }, (_, i) => i + 1);
+    history = [];
+    resultChip.classList.remove('show');
+    renderHistory();
+    draw();
+  }
+  function renderHistory() {
+    const box = $('history');
+    if (history.length === 0) {
+      box.innerHTML = '<span class="empty-note">아직 뽑은 번호가 없어요.</span>';
+      return;
+    }
+    box.innerHTML = history
+      .map((n, i) => `<span class="chip-n${i === history.length - 1 ? ' latest' : ''}">${n}</span>`)
+      .join('');
+  }
+
+  // ---------- 이벤트 ----------
+  $('btn-minus').addEventListener('click', () => setCount(count - 1));
+  $('btn-plus').addEventListener('click', () => setCount(count + 1));
+  countInput.addEventListener('change', e => setCount(parseInt(e.target.value)));
+  $('btn-reset').addEventListener('click', () => resetAll(true));
+  spinBtn.addEventListener('click', spin);
+  canvas.addEventListener('click', spin);
+  window.addEventListener('resize', draw);
+
+  setCount(25);
+</script>
+</body>
+</html>
