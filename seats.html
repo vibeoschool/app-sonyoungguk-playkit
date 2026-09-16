@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Seats — 랜덤 자리 배정</title>
+<title>Seats — 자리배치 도우미</title>
 <style>
   :root {
     --bg: #07080d;
@@ -17,7 +17,6 @@
     --indigo: #8b9dff;
     --rose: #ff7a6b;
     --amber: #ffd166;
-    --seat: clamp(42px, 8.2vw, 74px);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   body {
@@ -28,189 +27,130 @@
       var(--bg);
     color: var(--text); min-height: 100vh; padding: 24px 16px 48px;
   }
-  .wrap { max-width: 1120px; margin: 0 auto; }
+  .wrap { max-width: 1180px; margin: 0 auto; }
 
   header.top { text-align: center; margin-bottom: 28px; }
   header.top h1 { font-size: 24px; font-weight: 800; letter-spacing: -.5px; }
-  header.top p { color: var(--muted); font-size: 13px; margin-top: 6px; }
+  header.top p { color: var(--muted); font-size: 13px; margin-top: 8px; max-width: 62ch; margin-left: auto; margin-right: auto; line-height: 1.6; }
 
-  .layout { display: grid; grid-template-columns: 340px 1fr; gap: 20px; align-items: start; }
+  button {
+    font-family: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;
+    border-radius: 10px; border: 1px solid var(--line);
+    background: transparent; color: var(--text);
+    padding: 9px 14px; transition: .15s;
+  }
+  button:hover { background: rgba(255,255,255,.05); }
+  button:active { transform: scale(.98); }
+  button.primary { background: var(--teal); color: #07080d; border-color: var(--teal); font-weight: 700; }
+  button.primary:hover { filter: brightness(1.08); }
+  button.danger, button.danger-text { color: var(--rose); border-color: rgba(255,122,107,.3); }
+  button.danger:hover, button.danger-text:hover { background: rgba(255,122,107,.1); }
+  button.danger-text { border: none; background: none; padding: 4px 8px; font-size: 12px; }
+
+  input[type="text"], input[type="number"], select {
+    font-family: inherit; font-size: 13.5px;
+    background: var(--field); color: var(--text);
+    border: 1px solid var(--line); border-radius: 10px;
+    padding: 9px 11px; width: 100%; outline: none;
+  }
+  input:focus, select:focus { border-color: var(--teal); }
+  label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 6px; }
+
+  .layout { display: grid; grid-template-columns: 320px 1fr; gap: 20px; align-items: start; }
   @media (max-width: 880px) { .layout { grid-template-columns: 1fr; } }
 
-  .col { display: flex; flex-direction: column; gap: 16px; }
   .panel {
     background: linear-gradient(180deg, var(--panel), var(--panel2));
     border: 1px solid var(--line); border-radius: 20px; padding: 18px;
     box-shadow: 0 18px 44px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.05);
   }
-  .panel h2 { font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
-  .panel h2 .em { font-size: 16px; }
+  .panel + .panel { margin-top: 16px; }
+  .panel h2 { font-size: 14px; font-weight: 700; margin-bottom: 12px; }
+  .panel h2 small { display: block; font-weight: 500; font-size: 11.5px; color: var(--muted); margin-top: 3px; }
 
-  .badge { font-size: 11px; font-weight: 700; background: rgba(79,209,197,.14); color: var(--teal); padding: 4px 10px; border-radius: 999px; }
-  .row-between { display: flex; align-items: center; justify-content: space-between; }
+  .row { display: flex; gap: 8px; margin-bottom: 10px; }
+  .row > * { flex: 1; }
+  .config-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 4px; }
 
-  textarea {
-    width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line);
-    background: var(--field); color: var(--text); font-size: 14px; resize: none; outline: none;
-    font-family: inherit; line-height: 1.5;
+  .roster-list { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; max-height: 220px; overflow-y: auto; }
+  .roster-item {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--field); border: 1px solid var(--line); border-radius: 10px; padding: 7px 10px; font-size: 13px;
   }
-  textarea:focus { border-color: var(--teal); }
-  textarea::placeholder { color: #4a515f; }
-
-  .btn {
-    font-size: 12px; font-weight: 600; padding: 9px 12px; border-radius: 10px;
-    border: 1px solid var(--line); background: transparent; color: var(--text);
-    cursor: pointer; transition: .15s; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  .roster-item .name { flex: 1; }
+  .roster-item .tag {
+    font-size: 10.5px; font-weight: 700; color: var(--teal); background: rgba(94,234,212,.12);
+    padding: 3px 8px; border-radius: 999px; cursor: pointer; user-select: none; white-space: nowrap;
   }
-  .btn:hover { background: rgba(255,255,255,.05); }
-  .btn.danger { color: var(--rose); border-color: rgba(255,107,91,.3); }
-  .btn.danger:hover { background: rgba(255,107,91,.1); }
-  .btn.active { background: var(--indigo); border-color: var(--indigo); color: #0a0c14; }
-  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .roster-item .tag.off { color: var(--muted); background: transparent; border: 1px solid var(--line); }
 
-  label.fld { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
-  .stepper { display: flex; }
-  .stepper button {
-    width: 38px; border: 1px solid var(--line); background: var(--panel); color: var(--text);
-    font-size: 16px; font-weight: 700; cursor: pointer;
+  .pair-list { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+  .pair-item {
+    background: var(--field); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; font-size: 13px;
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 6px;
   }
-  .stepper button:first-child { border-radius: 10px 0 0 10px; }
-  .stepper button:last-child { border-radius: 0 10px 10px 0; }
-  .stepper button:hover { background: rgba(255,255,255,.06); }
-  .stepper input {
-    width: 100%; border: 1px solid var(--line); border-left: none; border-right: none;
-    background: var(--field); color: var(--text); text-align: center; font-size: 14px; font-weight: 700;
-    outline: none; -moz-appearance: textfield;
-  }
-  .stepper input::-webkit-outer-spin-button, .stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-  .total-line { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 13px; }
-  .total-line b { color: var(--text); }
+  .pair-item .txt { line-height: 1.4; }
+  .pair-item .txt .reason { color: var(--muted); font-size: 11.5px; display: block; margin-top: 1px; }
 
-  .tips { background: rgba(79,209,197,.06); border-color: rgba(79,209,197,.18); font-size: 12px; color: #b9c3cf; }
-  .tips h2 { color: var(--teal); }
-  .tips ul { list-style: none; display: flex; flex-direction: column; gap: 6px; }
-  .tips li::before { content: "•"; color: var(--teal); margin-right: 6px; }
-  .k-rose { color: var(--rose); font-weight: 700; }
-  .k-indigo { color: var(--indigo); font-weight: 700; }
-  .k-amber { color: var(--amber); font-weight: 700; }
+  .empty-hint { font-size: 12px; color: var(--muted); padding: 6px 2px; line-height: 1.5; }
 
-  /* actions bar */
-  .actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
-  .mode { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--muted); }
-  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--teal); box-shadow: 0 0 0 0 rgba(79,209,197,.5); animation: pulse 1.6s infinite; }
-  .dot.swap { background: var(--indigo); box-shadow: 0 0 0 0 rgba(124,140,255,.5); animation: pulseI 1.6s infinite; }
-  @keyframes pulse { 70% { box-shadow: 0 0 0 8px rgba(79,209,197,0); } 100% { box-shadow: 0 0 0 0 rgba(79,209,197,0); } }
-  @keyframes pulseI { 70% { box-shadow: 0 0 0 8px rgba(124,140,255,0); } 100% { box-shadow: 0 0 0 0 rgba(124,140,255,0); } }
-  .action-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
 
-  /* perspective tabs */
-  .tabs { display: flex; gap: 6px; background: var(--panel); border: 1px solid var(--line); padding: 5px; border-radius: 14px; }
+  .tabs { display: flex; gap: 6px; background: var(--panel); border: 1px solid var(--line); padding: 5px; border-radius: 14px; margin-bottom: 16px; }
   .tabs button {
     flex: 1; padding: 9px 10px; border-radius: 10px; border: 1px solid transparent; background: transparent;
     color: var(--muted); font-size: 12px; font-weight: 700; cursor: pointer; transition: .15s;
   }
-  .tabs button.on { background: var(--panel2); color: var(--teal); border-color: rgba(79,209,197,.25); }
-  .tabs button.on.back { color: var(--indigo); border-color: rgba(124,140,255,.3); }
+  .tabs button.on { background: var(--panel2); color: var(--teal); border-color: rgba(94,234,212,.25); }
+  .tabs button.on.back { color: var(--indigo); border-color: rgba(139,157,255,.3); }
 
-  /* stage */
-  .stage { display: flex; flex-direction: column; align-items: center; }
-  #classroom { width: 100%; display: flex; flex-direction: column; align-items: center; }
-  .board { width: 100%; max-width: 420px; margin: 6px auto 22px; }
-  .board.bottom { margin: 22px auto 6px; }
-  .board-inner {
-    background: #123c34; border: 3px solid #7a4a1e; border-radius: 8px; text-align: center; padding: 8px;
-    box-shadow: 0 8px 20px rgba(0,0,0,.4);
+  .board-bar {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px 10px 4px 4px;
+    text-align: center; padding: 8px; font-size: 12px; color: var(--muted); margin-bottom: 4px;
+    letter-spacing: .04em;
   }
-  .board-inner .lbl { font-size: 9px; letter-spacing: 2px; color: var(--amber); text-transform: uppercase; }
-  .board-inner .cb { font-size: 15px; font-weight: 800; letter-spacing: 6px; color: #d9fff5; margin-top: 2px; }
-
-  #grid-wrap { width: 100%; overflow-x: auto; display: flex; justify-content: center; padding: 4px 0; }
-  #seating-grid { display: grid; gap: 10px; }
-
+  .board-bar.bottom { border-radius: 4px 4px 10px 10px; margin-bottom: 0; margin-top: 4px; }
+  .chart-panel {
+    background: linear-gradient(180deg, var(--panel), var(--panel2));
+    border: 1px solid var(--line); border-radius: 20px; padding: 20px;
+    box-shadow: 0 18px 44px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.05);
+  }
+  .seat-grid { display: grid; gap: 10px; justify-content: center; margin: 14px auto; overflow-x: auto; padding: 4px; }
   .seat {
-    width: var(--seat); height: var(--seat); border-radius: 12px; border: 1px solid var(--line);
-    background: var(--panel); display: flex; flex-direction: column; justify-content: space-between;
-    padding: 5px 6px; cursor: pointer; transition: transform .15s, background .15s, border-color .15s, opacity .15s;
-    position: relative; overflow: hidden;
+    width: 92px; height: 68px; border-radius: 12px;
+    background: var(--panel); border: 1px solid var(--line);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-size: 12.5px; font-weight: 600; text-align: center; padding: 4px; position: relative; cursor: grab;
+    transition: border-color .15s, transform .1s, background .15s; word-break: keep-all;
   }
-  .seat .coord { font-size: 9px; font-weight: 700; color: var(--muted); }
-  .seat .body { flex: 1; display: flex; align-items: center; justify-content: center; font-size: clamp(10px, 2.4vw, 13px); font-weight: 700; text-align: center; line-height: 1.1; word-break: keep-all; }
-  .seat.normal { border-style: dashed; }
-  .seat.normal .body { color: #4a515f; font-size: 10px; font-weight: 500; }
-  .seat.normal:hover { border-color: var(--teal); background: #1b2028; }
-  .seat.assigned { background: rgba(79,209,197,.1); border-color: var(--teal); }
-  .seat.assigned .coord { color: var(--teal); }
-  .seat.assigned .body { color: #eafffb; }
-  .seat.excepted { background: rgba(255,107,91,.12); border-color: rgba(255,107,91,.5); }
-  .seat.excepted .coord { color: var(--rose); }
-  .seat.excepted .body { color: var(--rose); font-size: 16px; }
-  .seat.fixed { background: rgba(124,140,255,.14); border-color: rgba(124,140,255,.6); }
-  .seat.fixed .coord { color: var(--indigo); }
-  .seat.fixed .body { color: #e7eaff; }
-  .seat.selected { outline: 3px solid var(--indigo); outline-offset: 1px; }
-  .seat.revealing { transform: scale(.8); opacity: .3; }
-  .seat.pop { transform: scale(1.08); background: rgba(255,207,91,.18); border-color: var(--amber); }
-
-  .notice { margin-top: 16px; font-size: 12px; padding: 8px 12px; border-radius: 10px; display: inline-flex; align-items: center; gap: 6px; font-weight: 600; background: rgba(79,209,197,.1); border: 1px solid rgba(79,209,197,.2); color: #bff0e9; }
-  .notice.back { background: rgba(124,140,255,.1); border-color: rgba(124,140,255,.25); color: #cdd4ff; }
-
-  .legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); font-size: 11px; color: var(--muted); width: 100%; }
-  .legend .it { display: flex; align-items: center; gap: 5px; }
-  .legend .sw { width: 14px; height: 14px; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; font-size: 8px; }
-  .sw.normal { background: var(--panel); border: 1px dashed var(--line); }
-  .sw.assigned { background: rgba(79,209,197,.15); border: 1px solid var(--teal); }
-  .sw.excepted { background: rgba(255,107,91,.15); border: 1px solid var(--rose); color: var(--rose); }
-  .sw.fixed { background: rgba(124,140,255,.15); border: 1px solid var(--indigo); color: var(--indigo); }
-
-  /* draw bar */
-  .drawbar {
-    background: linear-gradient(90deg, #10645a, #0f4f45); border: 1px solid rgba(79,209,197,.25);
-    border-radius: 18px; padding: 16px 18px; display: flex; flex-wrap: wrap; gap: 14px;
-    align-items: center; justify-content: space-between;
+  .seat.empty { color: #4a515f; font-size: 11px; font-weight: 500; border-style: dashed; cursor: default; }
+  .seat.conflict { border-color: var(--rose); background: rgba(255,122,107,.12); }
+  .seat.frontneed::before {
+    content: ''; position: absolute; top: 6px; left: 6px; width: 6px; height: 6px;
+    border-radius: 50%; background: var(--teal); box-shadow: 0 0 6px rgba(94,234,212,.6);
   }
-  .drawbar h3 { font-size: 15px; font-weight: 800; display: flex; align-items: center; gap: 8px; }
-  .drawbar p { font-size: 12px; color: #bff0e9; margin-top: 2px; }
-  .btn-draw {
-    background: linear-gradient(135deg, #ffd166, #f7b93e); color: #2b2405; font-weight: 800; font-size: 14px;
-    padding: 12px 22px; border-radius: 12px; border: none; cursor: pointer; transition: .15s;
-    display: inline-flex; align-items: center; gap: 8px;
-    box-shadow: 0 8px 24px rgba(255,209,102,.22);
-  }
-  .btn-draw:hover { transform: translateY(-2px); box-shadow: 0 14px 32px rgba(255,209,102,.3); }
+  .seat.dragover { transform: scale(1.05); border-color: var(--indigo); background: rgba(139,157,255,.12); }
+  .seat .sname { color: var(--text); }
+  .seat .warn-icon { font-size: 10.5px; color: var(--rose); margin-top: 2px; font-weight: 700; }
 
-  /* modals */
-  .overlay {
-    position: fixed; inset: 0; background: rgba(6,8,12,.7); backdrop-filter: blur(4px);
-    display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 50;
-    opacity: 0; pointer-events: none; transition: opacity .25s;
-  }
-  .overlay.show { opacity: 1; pointer-events: auto; }
-  .modal {
-    background: linear-gradient(180deg, #151922, #10131b); border: 1px solid var(--line);
-    border-radius: 20px; padding: 22px; max-width: 340px; width: 100%; text-align: center;
-    transform: scale(.92); transition: transform .25s;
-    box-shadow: 0 30px 80px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.06);
-  }
-  .overlay.show .modal { transform: scale(1); }
-  .modal .m-icon { width: 46px; height: 46px; border-radius: 50%; margin: 0 auto 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
-  .m-icon.error { background: rgba(255,107,91,.15); }
-  .m-icon.success { background: rgba(79,209,197,.15); }
-  .m-icon.info { background: rgba(124,140,255,.15); }
-  .modal h3 { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
-  .modal p { font-size: 13px; color: var(--muted); margin-bottom: 18px; line-height: 1.5; }
-  .modal .m-close { width: 100%; background: var(--panel2); border: 1px solid var(--line); color: var(--text); font-weight: 700; font-size: 13px; padding: 10px; border-radius: 10px; cursor: pointer; }
-  .modal .m-close:hover { background: #262d3a; }
+  .summary-row { display: flex; gap: 12px; flex-wrap: wrap; margin: 16px 0; }
+  .stat { background: var(--field); border: 1px solid var(--line); border-radius: 14px; padding: 10px 16px; min-width: 120px; }
+  .stat .num { font-size: 22px; font-weight: 800; }
+  .stat.ok .num { color: var(--teal); }
+  .stat.bad .num { color: var(--rose); }
+  .stat .lbl { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
 
-  .modal.left { text-align: left; }
-  .modal.left h3 { display: flex; align-items: center; gap: 6px; }
-  #fix-student-list { max-height: 190px; overflow-y: auto; border: 1px solid var(--line); border-radius: 10px; padding: 6px; margin: 12px 0; }
-  #fix-student-list label { display: flex; align-items: center; gap: 8px; padding: 7px 8px; border-radius: 8px; font-size: 13px; cursor: pointer; }
-  #fix-student-list label:hover { background: rgba(255,255,255,.05); }
-  #fix-student-list input { accent-color: var(--indigo); }
-  .fix-btns { display: flex; gap: 8px; }
-  .fix-btns .btn { flex: 1; }
-  .btn.save { background: var(--indigo); border-color: var(--indigo); color: #0a0c14; }
-  .btn.save:hover { background: #6b7cf0; }
+  .conflict-list { margin-top: 14px; }
+  .conflict-list .ci {
+    background: rgba(255,122,107,.1); border: 1px solid rgba(255,122,107,.25); color: #ffb3a8;
+    border-radius: 10px; padding: 8px 12px; font-size: 12.5px; margin-bottom: 6px;
+  }
+
+  .empty-main { text-align: center; padding: 60px 20px; color: var(--muted); font-size: 13.5px; line-height: 1.7; }
+
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 11.5px; color: var(--muted); margin-top: 14px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
 
   .home-btn {
     position: fixed; top: 16px; left: 16px; z-index: 60;
@@ -223,12 +163,10 @@
   .home-btn:hover { background: rgba(255,255,255,.16); transform: translateY(-1px); }
 
   @media print {
-    body { background: #fff; color: #000; padding: 0; }
-    .home-btn, .no-print { display: none !important; }
+    .home-btn, header.top, .layout > .side, .actions, .tabs, .legend, .conflict-list, .summary-row { display: none !important; }
     .layout { display: block; }
-    .col.controls { display: none; }
-    .panel.stage { border: none; background: #fff; }
-    .board-inner { box-shadow: none; }
+    body { background: #fff; color: #000; padding: 0; }
+    .chart-panel { border: none; box-shadow: none; }
   }
 </style>
 </head>
@@ -237,494 +175,592 @@
     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
   </a>
 
-  <div class="wrap">
-    <header class="top">
-      <h1>🪑 Seats — 랜덤 자리 배정</h1>
-      <p>공정하고 편리한 교실 자리 바꾸기 · 빌드 없이 오프라인에서 바로</p>
-    </header>
+<div class="wrap">
+  <header class="top">
+    <h1>🪑 Seats — 자리배치 도우미</h1>
+    <p>학생 명단과 갈등 관계를 등록하면 다투는 학생끼리는 떨어뜨리고, 배려가 필요한 학생은 앞자리로 배치해요. 배치 결과는 자리를 직접 끌어다 바꿀 수도 있어요.</p>
+  </header>
 
-    <div class="layout">
-      <!-- Controls -->
-      <section class="col controls">
-        <div class="panel">
-          <div class="row-between" style="margin-bottom:12px">
-            <h2 style="margin:0"><span class="em">👥</span> 1. 학생 명단</h2>
-            <span class="badge" id="student-count">0명 등록됨</span>
-          </div>
-          <textarea id="students-input" rows="5" placeholder="김철수, 이영희, 박민수, 최지우…&#10;쉼표·띄어쓰기·줄바꿈 모두 구분자로 인식해요"></textarea>
-          <div class="grid2" style="margin-top:10px">
-            <button class="btn" id="btn-load-demo">✨ 예시 채우기</button>
-            <button class="btn danger" id="btn-clear-students">🗑 명단 비우기</button>
-          </div>
+  <div class="layout">
+    <div class="side">
+      <div class="panel">
+        <h2>학급 좌석 설정<small>줄과 열 수를 정해요</small></h2>
+        <div class="config-grid">
+          <div><label for="cfgRows">줄 수</label><input type="number" id="cfgRows" min="1" max="10" value="5"></div>
+          <div><label for="cfgCols">열 수</label><input type="number" id="cfgCols" min="1" max="10" value="6"></div>
+          <div><label for="cfgFront">앞자리 기준 줄</label><input type="number" id="cfgFront" min="1" max="5" value="2"></div>
         </div>
+        <div class="empty-hint">앞자리 기준 줄 수는 칠판에서부터 몇 번째 줄까지를 "앞자리"로 볼지 정해요.</div>
+      </div>
 
-        <div class="panel">
-          <h2><span class="em">🔲</span> 2. 배치 구도 설정</h2>
-          <div class="grid2">
-            <div>
-              <label class="fld">세로 행 (줄수)</label>
-              <div class="stepper">
-                <button type="button" onclick="changeGridValue('rows', -1)">−</button>
-                <input type="number" id="grid-rows" min="1" max="15" value="5">
-                <button type="button" onclick="changeGridValue('rows', 1)">+</button>
-              </div>
-            </div>
-            <div>
-              <label class="fld">가로 열 (칸수)</label>
-              <div class="stepper">
-                <button type="button" onclick="changeGridValue('cols', -1)">−</button>
-                <input type="number" id="grid-cols" min="1" max="15" value="6">
-                <button type="button" onclick="changeGridValue('cols', 1)">+</button>
-              </div>
-            </div>
-          </div>
-          <div class="total-line"><span style="color:var(--muted)">총 책상 수</span><b id="total-desks">30칸</b></div>
+      <div class="panel">
+        <h2>학생 명단<small>이름을 입력하고 추가해요</small></h2>
+        <div class="row">
+          <input type="text" id="studentName" placeholder="예: 김민준" maxlength="12">
+          <button class="primary" id="addStudentBtn" style="flex:0 0 auto;">추가</button>
         </div>
+        <button id="loadDemoBtn" style="width:100%; margin-bottom:10px;">🎲 예시 학생 30명 랜덤으로 채우기</button>
+        <div id="studentError" style="color:var(--rose); font-size:12px; display:none; margin-bottom:6px;"></div>
+        <div id="rosterList" class="roster-list"></div>
+        <div class="empty-hint">이름 옆 태그를 누르면 앞자리가 필요한 학생으로 표시할 수 있어요.</div>
+      </div>
 
-        <div class="panel tips">
-          <h2><span class="em">💡</span> 간편 꿀팁</h2>
-          <ul>
-            <li>자리 클릭: 일반 → <span class="k-rose">제외석</span> → <span class="k-indigo">고정석</span> 순환</li>
-            <li><span class="k-indigo">위치 직접 바꾸기</span>: 두 자리를 맞바꿀 때 사용</li>
-            <li><span class="k-amber">시점 전환</span>: 게시용 뒤판 180° 회전 출력</li>
-          </ul>
+      <div class="panel">
+        <h2>갈등 관계<small>옆이나 앞뒤로 앉히면 안 되는 사이</small></h2>
+        <div class="row">
+          <select id="conflictA"></select>
+          <select id="conflictB"></select>
         </div>
-      </section>
-
-      <!-- Board -->
-      <section class="col">
-        <div class="panel actions no-print">
-          <div class="mode">
-            <span class="dot" id="mode-dot"></span>
-            <span id="mode-text">실시간 좌석 커스텀 모드</span>
-          </div>
-          <div class="action-btns">
-            <button class="btn" id="btn-toggle-swap">🔄 위치 직접 바꾸기</button>
-            <button class="btn" id="btn-reset-layout">↩ 좌석 초기화</button>
-            <button class="btn" id="btn-export-img">🖼 이미지 저장</button>
-            <button class="btn" id="btn-print">🖨 인쇄하기</button>
-          </div>
+        <div class="row">
+          <input type="text" id="conflictReason" placeholder="이유 (선택, 예: 자주 다툼)" maxlength="30">
+          <button id="addConflictBtn" style="flex:0 0 auto;">등록</button>
         </div>
+        <div id="conflictError" style="color:var(--rose); font-size:12px; display:none;"></div>
+        <div id="conflictList" class="pair-list"></div>
+      </div>
 
-        <div class="tabs no-print">
-          <button id="tab-front" class="on" onclick="setPerspective('front')">👁 교실 앞쪽 기준 (칠판 위)</button>
-          <button id="tab-back" onclick="setPerspective('back')">↩ 교실 뒤쪽 기준 (180° 회전)</button>
+      <div class="panel">
+        <h2>같이 앉히고 싶은 사이<small>선택 사항, 가능하면 붙여줘요</small></h2>
+        <div class="row">
+          <select id="prefA"></select>
+          <select id="prefB"></select>
         </div>
-
-        <div class="panel stage">
-          <div id="classroom">
-            <div id="board-top" class="board">
-              <div class="board-inner">
-                <div class="lbl">Blackboard</div>
-                <div class="cb">칠 판</div>
-              </div>
-            </div>
-            <div id="grid-wrap"><div id="seating-grid"></div></div>
-            <div id="board-bottom" class="board bottom" hidden></div>
-          </div>
-
-          <div class="notice no-print" id="notice">
-            <span>ℹ️</span><span id="notice-text">현재는 교실 앞쪽(칠판)을 기준으로 보고 있습니다.</span>
-          </div>
-
-          <div class="legend no-print">
-            <div class="it"><span class="sw normal"></span>일반석</div>
-            <div class="it"><span class="sw assigned">학</span>배치됨</div>
-            <div class="it"><span class="sw excepted">✕</span>제외석</div>
-            <div class="it"><span class="sw fixed">📌</span>고정석</div>
-          </div>
+        <div class="row">
+          <input type="text" id="prefReason" placeholder="이유 (선택)" maxlength="30">
+          <button id="addPrefBtn" style="flex:0 0 auto;">등록</button>
         </div>
-
-        <div class="drawbar no-print">
-          <div>
-            <h3>🎲 랜덤 자리 배치 준비 완료!</h3>
-            <p>명단을 입력하고 배치를 실행하세요.</p>
-          </div>
-          <button class="btn-draw" id="btn-draw">🔀 자리 배치하기!</button>
-        </div>
-      </section>
-    </div>
-  </div>
-
-  <!-- Alert modal -->
-  <div class="overlay" id="modal">
-    <div class="modal">
-      <div class="m-icon" id="modal-icon"></div>
-      <h3 id="modal-title">알림</h3>
-      <p id="modal-message"></p>
-      <button class="m-close" id="modal-close">확인</button>
-    </div>
-  </div>
-
-  <!-- Fix seat modal -->
-  <div class="overlay" id="fix-modal">
-    <div class="modal left">
-      <h3>📌 이 자리의 주인공 지정</h3>
-      <div id="fix-student-list"></div>
-      <div class="fix-btns">
-        <button class="btn danger" id="btn-fix-clear">지정 해제</button>
-        <button class="btn" id="btn-fix-cancel">닫기</button>
-        <button class="btn save" id="btn-fix-save">선택 적용</button>
+        <div id="prefError" style="color:var(--rose); font-size:12px; display:none;"></div>
+        <div id="prefList" class="pair-list"></div>
       </div>
     </div>
+
+    <div class="main">
+      <div class="actions">
+        <button class="primary" id="runBtn">자리 배치 실행</button>
+        <button id="reshuffleBtn">다시 섞기</button>
+        <button id="printBtn">인쇄용으로 보기</button>
+        <button class="danger" id="resetBtn">전체 초기화</button>
+      </div>
+
+      <div class="tabs">
+        <button id="tabFront" class="on" type="button">👁 교실 앞쪽 기준 (칠판 위)</button>
+        <button id="tabBack" type="button">↩ 교실 뒤쪽 기준 (칠판 아래, 180°)</button>
+      </div>
+
+      <div id="mainArea"></div>
+    </div>
   </div>
+</div>
 
 <script>
-  // ---------- 상태 ----------
-  let students = [], rows = 5, cols = 6, gridData = {};
-  let viewPerspective = 'front', isSwapMode = false, selectedSeatForSwap = null, currentSelectCoords = null;
+(function() {
+  var STORAGE_KEY = 'seating-planner-v1';
+  var viewPerspective = 'front';
+  var state = {
+    students: [],
+    conflicts: [],
+    preferences: [],
+    config: { rows: 5, cols: 6, front: 2 },
+    arrangement: null
+  };
 
-  const defaultStudents = [
+  function uid() { return 'st_' + Math.random().toString(36).slice(2, 9); }
+
+  var NAME_POOL = [
     "김강우","이서준","박민지","최현우","정예은","한상우","윤지민","송준우","임도윤",
     "신채원","오지후","서아린","황예준","홍다은","고준영","전소율","권지혁","양서우",
-    "배은우","백지아","유민재","조하은","남우진","심서현","노유준"
+    "배은우","백지아","유민재","조하은","남우진","심서현","노유준","문서준","장하린",
+    "백승우","구민서","나연우","선유진","표지안","공하은","마도윤","방서연","제민준",
+    "위지호","염서은","탁하준","성은우"
   ];
 
-  const $ = id => document.getElementById(id);
-  const studentsInput = $('students-input');
-  const seatingGrid = $('seating-grid');
-  const boardTop = $('board-top'), boardBottom = $('board-bottom');
-  const notice = $('notice'), noticeText = $('notice-text');
-  const modeDot = $('mode-dot'), modeText = $('mode-text');
-  const btnSwap = $('btn-toggle-swap');
-  const tabFront = $('tab-front'), tabBack = $('tab-back');
-  const modal = $('modal'), fixModal = $('fix-modal'), fixList = $('fix-student-list');
-
-  // ---------- 초기화 ----------
-  studentsInput.addEventListener('input', updateStudentsList);
-  $('btn-load-demo').addEventListener('click', loadDemoStudents);
-  $('btn-clear-students').addEventListener('click', clearStudents);
-  $('btn-draw').addEventListener('click', executeSeatingDraw);
-  $('btn-reset-layout').addEventListener('click', resetSeatingLayout);
-  $('btn-export-img').addEventListener('click', exportAsImage);
-  $('btn-print').addEventListener('click', () => window.print());
-  btnSwap.addEventListener('click', toggleSwapMode);
-  $('modal-close').addEventListener('click', () => modal.classList.remove('show'));
-  $('btn-fix-cancel').addEventListener('click', closeFixModal);
-  $('btn-fix-clear').addEventListener('click', clearFixedSeat);
-  $('btn-fix-save').addEventListener('click', saveFixedSeat);
-
-  // 자리 클릭은 이벤트 위임으로 한 번만 등록(최적화)
-  seatingGrid.addEventListener('click', e => {
-    const seat = e.target.closest('.seat');
-    if (seat) handleSeatClick(+seat.dataset.r, +seat.dataset.c);
-  });
-
-  ['grid-rows', 'grid-cols'].forEach(id => {
-    $(id).addEventListener('change', e => {
-      const val = Math.max(1, Math.min(15, parseInt(e.target.value) || 1));
-      e.target.value = val;
-      if (id === 'grid-rows') rows = val; else cols = val;
-      syncGridDimensions();
-      renderGrid();
-    });
-  });
-
-  syncGridDimensions();
-  renderGrid();
-
-  // ---------- 명단 ----------
-  function updateStudentsList() {
-    students = studentsInput.value.split(/[\n,\t\s]+/).map(n => n.trim()).filter(Boolean);
-    $('student-count').textContent = `${students.length}명 등록됨`;
-    // 명단에서 사라진 고정 학생은 일반석으로
-    Object.keys(gridData).forEach(k => {
-      if (gridData[k].type === 'fixed' && !students.includes(gridData[k].student)) gridData[k] = { type: 'normal' };
-    });
-  }
-  function loadDemoStudents() {
-    studentsInput.value = defaultStudents.join(", ");
-    updateStudentsList();
-    renderGrid();
-    showModal("success", "예시 명단 탑재", `${defaultStudents.length}명의 예시 학생 이름이 등록되었습니다.`);
-  }
-  function clearStudents() {
-    studentsInput.value = "";
-    updateStudentsList();
-    Object.keys(gridData).forEach(k => { if (gridData[k].type === 'fixed') gridData[k] = { type: 'normal' }; });
-    renderGrid();
-  }
-
-  // ---------- 구도 ----------
-  function changeGridValue(type, offset) {
-    const input = $(type === 'rows' ? 'grid-rows' : 'grid-cols');
-    const val = Math.max(1, Math.min(15, (parseInt(input.value) || 0) + offset));
-    input.value = val;
-    if (type === 'rows') rows = val; else cols = val;
-    syncGridDimensions();
-    renderGrid();
-  }
-  function syncGridDimensions() {
-    $('total-desks').textContent = `${rows * cols}칸`;
-    // 격자 밖으로 나간 좌석 데이터 정리
-    Object.keys(gridData).forEach(key => {
-      const [r, c] = key.split(',').map(Number);
-      if (r >= rows || c >= cols) delete gridData[key];
-    });
-  }
-
-  // ---------- 그리드 렌더 ----------
-  function order(n) {
-    return Array.from({ length: n }, (_, i) => viewPerspective === 'front' ? i : n - 1 - i);
-  }
-  function renderGrid() {
-    seatingGrid.style.gridTemplateColumns = `repeat(${cols}, var(--seat))`;
-    const rRange = order(rows), cRange = order(cols);
-    let html = "";
-    rRange.forEach(r => cRange.forEach(c => {
-      const key = `${r},${c}`;
-      const s = gridData[key] || (gridData[key] = { type: 'normal' });
-      const sel = isSwapMode && selectedSeatForSwap === key ? ' selected' : '';
-      let cls, coord = `${r + 1}-${c + 1}`, body;
-      if (s.type === 'excepted') { cls = 'excepted'; body = '✕'; coord = ''; }
-      else if (s.type === 'fixed') { cls = 'fixed'; body = esc(s.student); }
-      else if (s.assignedStudent) { cls = 'assigned'; body = esc(s.assignedStudent); }
-      else { cls = 'normal'; body = '빈자리'; }
-      html += `<div class="seat ${cls}${sel}" data-r="${r}" data-c="${c}">
-        <span class="coord">${coord}</span><div class="body">${body}</div></div>`;
-    }));
-    seatingGrid.innerHTML = html;
-  }
-  function esc(str) {
-    return String(str).replace(/[&<>"']/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
-  }
-
-  // ---------- 좌석 클릭 ----------
-  function handleSeatClick(r, c) {
-    const key = `${r},${c}`;
-    if (isSwapMode) {
-      if (selectedSeatForSwap === null) {
-        selectedSeatForSwap = key;
-        modeText.innerHTML = "<b style='color:var(--indigo)'>[자리교환]</b> 맞바꿀 두 번째 자리를 클릭하세요.";
-      } else if (selectedSeatForSwap === key) {
-        selectedSeatForSwap = null;
-        modeText.innerHTML = "<b style='color:var(--indigo)'>[자리교환]</b> 바꿀 첫 번째 자리를 선택하세요.";
-      } else {
-        const tmp = gridData[selectedSeatForSwap];
-        gridData[selectedSeatForSwap] = gridData[key];
-        gridData[key] = tmp;
-        selectedSeatForSwap = null;
-        modeText.innerHTML = "<b style='color:var(--teal)'>✓ 교환 완료!</b> 첫 번째 자리를 선택하세요.";
+  function loadState() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        var parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') {
+          state.students = Array.isArray(parsed.students) ? parsed.students : [];
+          state.conflicts = Array.isArray(parsed.conflicts) ? parsed.conflicts : [];
+          state.preferences = Array.isArray(parsed.preferences) ? parsed.preferences : [];
+          state.config = parsed.config || state.config;
+          state.arrangement = parsed.arrangement || null;
+        }
       }
-      renderGrid();
+    } catch (e) { /* 저장된 데이터가 없거나 읽을 수 없음 */ }
+  }
+
+  function saveState() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (e) { /* 저장 실패 시 조용히 무시 */ }
+  }
+
+  function studentById(id) {
+    for (var i = 0; i < state.students.length; i++) {
+      if (state.students[i].id === id) return state.students[i];
+    }
+    return null;
+  }
+
+  function pairKey(a, b) { return a < b ? a + '|' + b : b + '|' + a; }
+
+  // ---------- 렌더: 학생 명단 ----------
+  function renderRoster() {
+    var list = document.getElementById('rosterList');
+    list.innerHTML = '';
+    if (state.students.length === 0) {
+      list.innerHTML = '<div class="empty-hint">등록된 학생이 없어요.</div>';
+    }
+    state.students.forEach(function(s) {
+      var item = document.createElement('div');
+      item.className = 'roster-item';
+      var nameSpan = document.createElement('span');
+      nameSpan.className = 'name';
+      nameSpan.textContent = s.name;
+      var tag = document.createElement('span');
+      tag.className = 'tag' + (s.frontNeeded ? '' : ' off');
+      tag.textContent = s.frontNeeded ? '앞자리 필요' : '앞자리 필요 아님';
+      tag.title = '눌러서 전환';
+      tag.addEventListener('click', function() {
+        s.frontNeeded = !s.frontNeeded;
+        saveState();
+        renderRoster();
+      });
+      var del = document.createElement('button');
+      del.className = 'danger-text';
+      del.textContent = '삭제';
+      del.addEventListener('click', function() {
+        state.students = state.students.filter(function(x) { return x.id !== s.id; });
+        state.conflicts = state.conflicts.filter(function(c) { return c.a !== s.id && c.b !== s.id; });
+        state.preferences = state.preferences.filter(function(c) { return c.a !== s.id && c.b !== s.id; });
+        saveState();
+        renderAll();
+      });
+      item.appendChild(nameSpan);
+      item.appendChild(tag);
+      item.appendChild(del);
+      list.appendChild(item);
+    });
+    renderSelects();
+  }
+
+  function renderSelects() {
+    ['conflictA', 'conflictB', 'prefA', 'prefB'].forEach(function(id) {
+      var sel = document.getElementById(id);
+      var current = sel.value;
+      sel.innerHTML = '';
+      if (state.students.length < 2) {
+        var opt = document.createElement('option');
+        opt.textContent = '학생을 2명 이상 등록해 주세요';
+        opt.value = '';
+        sel.appendChild(opt);
+        sel.disabled = true;
+        return;
+      }
+      sel.disabled = false;
+      state.students.forEach(function(s) {
+        var opt = document.createElement('option');
+        opt.value = s.id;
+        opt.textContent = s.name;
+        sel.appendChild(opt);
+      });
+      if (current) sel.value = current;
+    });
+  }
+
+  // ---------- 렌더: 갈등/선호 목록 ----------
+  function renderPairList(listId, pairs, emptyText) {
+    var el = document.getElementById(listId);
+    el.innerHTML = '';
+    if (pairs.length === 0) {
+      el.innerHTML = '<div class="empty-hint">' + emptyText + '</div>';
+      return;
+    }
+    pairs.forEach(function(p) {
+      var sa = studentById(p.a), sb = studentById(p.b);
+      if (!sa || !sb) return;
+      var item = document.createElement('div');
+      item.className = 'pair-item';
+      var txt = document.createElement('div');
+      txt.className = 'txt';
+      txt.innerHTML = sa.name + ' ↔ ' + sb.name +
+        (p.reason ? '<span class="reason">' + escapeHtml(p.reason) + '</span>' : '');
+      var del = document.createElement('button');
+      del.className = 'danger-text';
+      del.textContent = '삭제';
+      del.addEventListener('click', function() {
+        if (listId === 'conflictList') {
+          state.conflicts = state.conflicts.filter(function(x) { return x.id !== p.id; });
+        } else {
+          state.preferences = state.preferences.filter(function(x) { return x.id !== p.id; });
+        }
+        saveState();
+        renderAll();
+      });
+      item.appendChild(txt);
+      item.appendChild(del);
+      el.appendChild(item);
+    });
+  }
+
+  function escapeHtml(str) {
+    var d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  // ---------- 점수 계산 ----------
+  function computeScore(arr, rows, cols, front) {
+    var conflictSet = {}, prefSet = {};
+    state.conflicts.forEach(function(c) { conflictSet[pairKey(c.a, c.b)] = true; });
+    state.preferences.forEach(function(c) { prefSet[pairKey(c.a, c.b)] = true; });
+
+    var conflictCount = 0, prefCount = 0, frontViolation = 0;
+    var conflictSeats = {};
+
+    for (var r = 0; r < rows; r++) {
+      for (var c = 0; c < cols; c++) {
+        var idx = r * cols + c;
+        var sid = arr[idx];
+        if (!sid) continue;
+        var student = studentById(sid);
+        if (student && student.frontNeeded && r >= front) frontViolation++;
+
+        if (c + 1 < cols) {
+          var rid = arr[idx + 1];
+          if (rid) {
+            var k = pairKey(sid, rid);
+            if (conflictSet[k]) { conflictCount++; conflictSeats[idx] = true; conflictSeats[idx + 1] = true; }
+            if (prefSet[k]) prefCount++;
+          }
+        }
+        if (r + 1 < rows) {
+          var did = arr[idx + cols];
+          if (did) {
+            var k2 = pairKey(sid, did);
+            if (conflictSet[k2]) { conflictCount++; conflictSeats[idx] = true; conflictSeats[idx + cols] = true; }
+            if (prefSet[k2]) prefCount++;
+          }
+        }
+      }
+    }
+    var score = conflictCount * 1000 + frontViolation * 80 - prefCount * 15;
+    return { score: score, conflictCount: conflictCount, prefCount: prefCount, frontViolation: frontViolation, conflictSeats: conflictSeats };
+  }
+
+  function shuffle(arr) {
+    for (var i = arr.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+    }
+  }
+
+  function optimizeArrangement(rows, cols, front) {
+    var seats = rows * cols;
+    var studentIds = state.students.map(function(s) { return s.id; });
+    var best = null, bestScore = Infinity;
+    var restarts = studentIds.length > 24 ? 4 : 7;
+
+    for (var restart = 0; restart < restarts; restart++) {
+      var positions = [];
+      for (var i = 0; i < seats; i++) positions.push(i);
+      shuffle(positions);
+      var current = new Array(seats).fill(null);
+      studentIds.forEach(function(id, i) { current[positions[i]] = id; });
+      var currentScore = computeScore(current, rows, cols, front).score;
+
+      var T = 5.0;
+      var steps = studentIds.length > 24 ? 900 : 1400;
+      for (var step = 0; step < steps; step++) {
+        T *= 0.995;
+        var a = Math.floor(Math.random() * seats);
+        var b = Math.floor(Math.random() * seats);
+        if (a === b) continue;
+        var tmp = current[a]; current[a] = current[b]; current[b] = tmp;
+        var newScore = computeScore(current, rows, cols, front).score;
+        var delta = newScore - currentScore;
+        if (delta <= 0 || Math.random() < Math.exp(-delta / Math.max(T, 0.001))) {
+          currentScore = newScore;
+          if (currentScore < bestScore) { bestScore = currentScore; best = current.slice(); }
+        } else {
+          var tmp2 = current[a]; current[a] = current[b]; current[b] = tmp2;
+        }
+      }
+    }
+    return best;
+  }
+
+  // ---------- 렌더: 메인 좌석 배치도 ----------
+  function renderMain() {
+    var main = document.getElementById('mainArea');
+    var rows = state.config.rows, cols = state.config.cols;
+    var seatCount = rows * cols;
+
+    if (state.students.length === 0) {
+      main.innerHTML = '<div class="chart-panel"><div class="empty-main">왼쪽에서 학생을 먼저 등록해 주세요.<br>등록 후 "자리 배치 실행"을 누르면 자리를 정해드려요.</div></div>';
       return;
     }
 
-    const s = gridData[key];
-    if (s.type === 'normal') { gridData[key] = { type: 'excepted' }; renderGrid(); }
-    else if (s.type === 'excepted') {
-      if (students.length === 0) { gridData[key] = { type: 'normal' }; renderGrid(); }
-      else openFixSeatModal(r, c);
+    if (state.students.length > seatCount) {
+      main.innerHTML = '<div class="chart-panel"><div class="empty-main">좌석(' + seatCount + '석)이 학생 수(' + state.students.length + '명)보다 적어요.<br>줄이나 열 수를 늘려 주세요.</div></div>';
+      return;
     }
-    else if (s.type === 'fixed') { gridData[key] = { type: 'normal' }; renderGrid(); }
-  }
 
-  // ---------- 고정석 모달 ----------
-  function openFixSeatModal(r, c) {
-    currentSelectCoords = { r, c };
-    const key = `${r},${c}`;
-    const alreadyFixed = Object.keys(gridData)
-      .filter(k => k !== key && gridData[k].type === 'fixed').map(k => gridData[k].student);
-    const available = students.filter(st => !alreadyFixed.includes(st));
-    if (available.length === 0) { showModal("error", "지정 불가", "고정할 수 있는 학생이 없습니다."); return; }
-
-    fixList.innerHTML = available.map(st => {
-      const checked = gridData[key].type === 'fixed' && gridData[key].student === st ? 'checked' : '';
-      return `<label><input type="radio" name="fixopt" value="${esc(st)}" ${checked}><span>${esc(st)}</span></label>`;
-    }).join("");
-    fixModal.classList.add('show');
-  }
-  function closeFixModal() { fixModal.classList.remove('show'); currentSelectCoords = null; }
-  function saveFixedSeat() {
-    if (!currentSelectCoords) return;
-    const sel = document.querySelector('input[name="fixopt"]:checked');
-    if (!sel) { showModal("error", "알림", "학생을 선택해 주세요."); return; }
-    gridData[`${currentSelectCoords.r},${currentSelectCoords.c}`] = { type: 'fixed', student: sel.value };
-    closeFixModal(); renderGrid();
-  }
-  function clearFixedSeat() {
-    if (!currentSelectCoords) return;
-    gridData[`${currentSelectCoords.r},${currentSelectCoords.c}`] = { type: 'normal' };
-    closeFixModal(); renderGrid();
-  }
-
-  // ---------- 모드/시점 ----------
-  function toggleSwapMode() {
-    isSwapMode = !isSwapMode;
-    selectedSeatForSwap = null;
-    if (isSwapMode) {
-      btnSwap.classList.add('active');
-      modeDot.classList.add('swap');
-      modeText.innerHTML = "<b style='color:var(--indigo)'>[자리교환]</b> 바꿀 첫 번째 자리를 선택하세요.";
-    } else {
-      btnSwap.classList.remove('active');
-      modeDot.classList.remove('swap');
-      modeText.textContent = "실시간 좌석 커스텀 모드";
+    if (!state.arrangement) {
+      main.innerHTML = '<div class="chart-panel"><div class="empty-main">"자리 배치 실행"을 누르면 갈등을 피해 자리를 정해드려요.</div></div>';
+      return;
     }
-    renderGrid();
+
+    var scoreInfo = computeScore(state.arrangement, rows, cols, state.config.front);
+    var isBack = viewPerspective === 'back';
+
+    var boardBarHtml = '<div class="board-bar' + (isBack ? ' bottom' : '') + '">칠판 쪽</div>';
+    var seatGridHtml = '<div class="seat-grid" id="seatGrid" style="grid-template-columns: repeat(' + cols + ', 92px);"></div>';
+
+    var html = '<div class="chart-panel">';
+    html += isBack ? (seatGridHtml + boardBarHtml) : (boardBarHtml + seatGridHtml);
+    html += '<div class="legend">';
+    html += '<span><span class="dot" style="background:var(--teal)"></span>앞자리가 필요한 학생</span>';
+    html += '<span><span class="dot" style="background:var(--rose)"></span>갈등 관계가 붙어 있는 자리</span>';
+    html += '</div>';
+
+    html += '<div class="summary-row">';
+    html += '<div class="stat ' + (scoreInfo.conflictCount === 0 ? 'ok' : 'bad') + '"><div class="num">' + scoreInfo.conflictCount + '</div><div class="lbl">남은 갈등 쌍</div></div>';
+    html += '<div class="stat ' + (scoreInfo.frontViolation === 0 ? 'ok' : 'bad') + '"><div class="num">' + scoreInfo.frontViolation + '</div><div class="lbl">앞자리 배려 못 지킨 학생</div></div>';
+    html += '<div class="stat"><div class="num">' + scoreInfo.prefCount + '</div><div class="lbl">함께 앉은 선호 쌍</div></div>';
+    html += '</div>';
+
+    if (scoreInfo.conflictCount > 0) {
+      html += '<div class="conflict-list" id="conflictDetailList"></div>';
+    }
+    html += '</div>';
+
+    main.innerHTML = html;
+
+    var grid = document.getElementById('seatGrid');
+    var rOrder = [], cOrder = [];
+    for (var ri = 0; ri < rows; ri++) rOrder.push(isBack ? rows - 1 - ri : ri);
+    for (var ci = 0; ci < cols; ci++) cOrder.push(isBack ? cols - 1 - ci : ci);
+    rOrder.forEach(function(r) {
+      cOrder.forEach(function(c) {
+        var idx = r * cols + c;
+        var sid = state.arrangement[idx];
+        var seatEl = document.createElement('div');
+        seatEl.dataset.idx = idx;
+        if (!sid) {
+          seatEl.className = 'seat empty';
+          seatEl.textContent = '빈자리';
+        } else {
+          var student = studentById(sid);
+          seatEl.className = 'seat' + (scoreInfo.conflictSeats[idx] ? ' conflict' : '') + (student && student.frontNeeded ? ' frontneed' : '');
+          seatEl.draggable = true;
+          var nameEl = document.createElement('div');
+          nameEl.className = 'sname';
+          nameEl.textContent = student ? student.name : '';
+          seatEl.appendChild(nameEl);
+          if (scoreInfo.conflictSeats[idx]) {
+            var warnEl = document.createElement('div');
+            warnEl.className = 'warn-icon';
+            warnEl.textContent = '갈등 주의';
+            seatEl.appendChild(warnEl);
+          }
+        }
+        attachDragEvents(seatEl);
+        grid.appendChild(seatEl);
+      });
+    });
+
+    if (scoreInfo.conflictCount > 0) {
+      var detailList = document.getElementById('conflictDetailList');
+      state.conflicts.forEach(function(c) {
+        var ia = state.arrangement.indexOf(c.a);
+        var ib = state.arrangement.indexOf(c.b);
+        if (ia === -1 || ib === -1) return;
+        var ra = Math.floor(ia / cols), ca = ia % cols;
+        var rb = Math.floor(ib / cols), cb = ib % cols;
+        var adjacent = (ra === rb && Math.abs(ca - cb) === 1) || (ca === cb && Math.abs(ra - rb) === 1);
+        if (adjacent) {
+          var sa = studentById(c.a), sb = studentById(c.b);
+          var row = document.createElement('div');
+          row.className = 'ci';
+          row.textContent = sa.name + '와(과) ' + sb.name + '이(가) 붙어 있어요' + (c.reason ? ' (' + c.reason + ')' : '');
+          detailList.appendChild(row);
+        }
+      });
+    }
   }
+
+  function attachDragEvents(seatEl) {
+    seatEl.addEventListener('dragstart', function(e) {
+      e.dataTransfer.setData('text/plain', seatEl.dataset.idx);
+    });
+    seatEl.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      seatEl.classList.add('dragover');
+    });
+    seatEl.addEventListener('dragleave', function() {
+      seatEl.classList.remove('dragover');
+    });
+    seatEl.addEventListener('drop', function(e) {
+      e.preventDefault();
+      seatEl.classList.remove('dragover');
+      var fromIdx = parseInt(e.dataTransfer.getData('text/plain'), 10);
+      var toIdx = parseInt(seatEl.dataset.idx, 10);
+      if (fromIdx === toIdx || isNaN(fromIdx)) return;
+      var tmp = state.arrangement[fromIdx];
+      state.arrangement[fromIdx] = state.arrangement[toIdx];
+      state.arrangement[toIdx] = tmp;
+      saveState();
+      renderMain();
+    });
+  }
+
+  function renderAll() {
+    renderRoster();
+    renderPairList('conflictList', state.conflicts, '등록된 갈등 관계가 없어요.');
+    renderPairList('prefList', state.preferences, '등록된 선호 관계가 없어요.');
+    renderMain();
+    document.getElementById('cfgRows').value = state.config.rows;
+    document.getElementById('cfgCols').value = state.config.cols;
+    document.getElementById('cfgFront').value = state.config.front;
+  }
+
+  // ---------- 시점 전환 ----------
   function setPerspective(mode) {
     if (viewPerspective === mode) return;
     viewPerspective = mode;
+    var tf = document.getElementById('tabFront'), tb = document.getElementById('tabBack');
     if (mode === 'front') {
-      tabFront.classList.add('on'); tabBack.classList.remove('on', 'back');
-      boardTop.hidden = false; boardBottom.hidden = true;
-      notice.classList.remove('back');
-      noticeText.textContent = "현재는 교실 앞쪽(칠판)을 기준으로 보고 있습니다.";
+      tf.classList.add('on'); tb.classList.remove('on', 'back');
     } else {
-      tabBack.classList.add('on', 'back'); tabFront.classList.remove('on');
-      boardTop.hidden = true; boardBottom.hidden = false;
-      boardBottom.innerHTML = boardTop.innerHTML;
-      notice.classList.add('back');
-      noticeText.textContent = "현재는 교실 뒤쪽 기준입니다. (칠판이 아래로, 자리가 180° 회전)";
+      tb.classList.add('on', 'back'); tf.classList.remove('on');
     }
-    renderGrid();
+    renderMain();
   }
 
-  // ---------- 배치 ----------
-  function resetSeatingLayout() {
-    Object.keys(gridData).forEach(k => gridData[k] = { type: 'normal' });
-    if (isSwapMode) toggleSwapMode();
-    renderGrid();
+  // ---------- 예시 명단 ----------
+  function loadDemoStudents() {
+    if (state.students.length > 0 && !confirm('현재 명단을 지우고 예시 학생 30명을 넣을까요?')) return;
+    var pool = NAME_POOL.slice();
+    shuffle(pool);
+    state.students = pool.slice(0, 30).map(function(name) {
+      return { id: uid(), name: name, frontNeeded: false };
+    });
+    state.conflicts = [];
+    state.preferences = [];
+    state.arrangement = null;
+    saveState();
+    renderAll();
   }
-  function shuffle(arr) {
-    for (let i = arr.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-  }
-  function executeSeatingDraw() {
-    if (students.length === 0) { showModal("error", "인원 부족", "학생 명단을 먼저 입력해 주세요!"); return; }
 
-    let exceptedCount = 0, fixedStudents = [], normalDesks = [];
-    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
-      const s = gridData[`${r},${c}`];
-      if (s.type === 'excepted') exceptedCount++;
-      else if (s.type === 'fixed') fixedStudents.push(s.student);
-      else normalDesks.push(`${r},${c}`);
-    }
-
-    const available = rows * cols - exceptedCount;
-    if (students.length > available) {
-      showModal("error", "자리 부족", `학생 수(${students.length}명)가 배치 가능한 좌석(${available}칸)보다 많습니다.`);
+  // ---------- 이벤트 바인딩 ----------
+  document.getElementById('addStudentBtn').addEventListener('click', function() {
+    var input = document.getElementById('studentName');
+    var name = input.value.trim();
+    var errEl = document.getElementById('studentError');
+    errEl.style.display = 'none';
+    if (!name) { errEl.textContent = '학생 이름을 입력해 주세요.'; errEl.style.display = 'block'; return; }
+    if (state.students.some(function(s) { return s.name === name; })) {
+      errEl.textContent = '이미 등록된 이름이에요.';
+      errEl.style.display = 'block';
       return;
     }
+    state.students.push({ id: uid(), name: name, frontNeeded: false });
+    input.value = '';
+    saveState();
+    renderAll();
+  });
+  document.getElementById('studentName').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') document.getElementById('addStudentBtn').click();
+  });
+  document.getElementById('loadDemoBtn').addEventListener('click', loadDemoStudents);
+  document.getElementById('tabFront').addEventListener('click', function() { setPerspective('front'); });
+  document.getElementById('tabBack').addEventListener('click', function() { setPerspective('back'); });
 
-    const pool = students.filter(st => !fixedStudents.includes(st));
-    shuffle(pool); shuffle(normalDesks);
-
-    normalDesks.forEach(k => delete gridData[k].assignedStudent);
-    pool.forEach((st, i) => { if (i < normalDesks.length) gridData[normalDesks[i]].assignedStudent = st; });
-
-    renderGrid();
-    animateReveal();
-  }
-  function animateReveal() {
-    seatingGrid.querySelectorAll('.seat.assigned').forEach(seat => {
-      const body = seat.querySelector('.body');
-      const name = body.textContent;
-      body.textContent = "?";
-      seat.classList.add('revealing');
-      setTimeout(() => {
-        body.textContent = name;
-        seat.classList.remove('revealing');
-        seat.classList.add('pop');
-        setTimeout(() => seat.classList.remove('pop'), 450);
-      }, Math.random() * 550 + 100);
-    });
-  }
-
-  // ---------- 모달 ----------
-  function showModal(type, title, message) {
-    const icon = $('modal-icon');
-    icon.className = 'm-icon ' + type;
-    icon.textContent = type === 'error' ? '⚠️' : type === 'success' ? '✅' : 'ℹ️';
-    $('modal-title').textContent = title;
-    $('modal-message').textContent = message;
-    modal.classList.add('show');
-  }
-
-  // ---------- 이미지 저장 (Canvas 직접 렌더, 외부 라이브러리 없음) ----------
-  function roundRect(ctx, x, y, w, h, r) {
-    ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.arcTo(x + w, y, x + w, y + h, r);
-    ctx.arcTo(x + w, y + h, x, y + h, r);
-    ctx.arcTo(x, y + h, x, y, r);
-    ctx.arcTo(x, y, x + w, y, r);
-    ctx.closePath();
-  }
-  function fitText(ctx, text, maxW) {
-    let t = text;
-    while (ctx.measureText(t).width > maxW && t.length > 1) t = t.slice(0, -1);
-    return t === text ? text : t.slice(0, -1) + '…';
-  }
-  function exportAsImage() {
-    const cell = 96, gap = 12, pad = 48, boardH = 66, boardGap = 30, scale = 2;
-    const gridW = cols * cell + (cols - 1) * gap;
-    const gridH = rows * cell + (rows - 1) * gap;
-    const w = pad * 2 + gridW;
-    const h = pad * 2 + boardH + boardGap + gridH;
-    const cv = document.createElement('canvas');
-    cv.width = w * scale; cv.height = h * scale;
-    const ctx = cv.getContext('2d');
-    ctx.scale(scale, scale);
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-
-    // 배경
-    ctx.fillStyle = '#0f1115'; ctx.fillRect(0, 0, w, h);
-
-    const front = viewPerspective === 'front';
-    const gridX = (w - gridW) / 2;
-    const boardY = front ? pad : h - pad - boardH;
-    const gridY = front ? pad + boardH + boardGap : pad;
-
-    // 칠판
-    const bw = Math.min(gridW, 380), bx = (w - bw) / 2;
-    ctx.fillStyle = '#123c34';
-    roundRect(ctx, bx, boardY, bw, boardH, 8); ctx.fill();
-    ctx.lineWidth = 3; ctx.strokeStyle = '#7a4a1e'; ctx.stroke();
-    ctx.fillStyle = '#ffcf5b'; ctx.font = '700 10px sans-serif';
-    ctx.fillText('B L A C K B O A R D', w / 2, boardY + 22);
-    ctx.fillStyle = '#d9fff5'; ctx.font = '800 18px sans-serif';
-    ctx.fillText('칠  판', w / 2, boardY + 44);
-
-    // 좌석
-    const rRange = order(rows), cRange = order(cols);
-    rRange.forEach((r, ri) => cRange.forEach((c, ci) => {
-      const s = gridData[`${r},${c}`] || { type: 'normal' };
-      const x = gridX + ci * (cell + gap), y = gridY + ri * (cell + gap);
-      let bg, border, coordCol, bodyCol, coord = `${r + 1}-${c + 1}`, body, dashed = false;
-      if (s.type === 'excepted') { bg = 'rgba(255,107,91,.15)'; border = '#ff6b5b'; coordCol = ''; bodyCol = '#ff6b5b'; coord = ''; body = '✕'; }
-      else if (s.type === 'fixed') { bg = 'rgba(124,140,255,.18)'; border = '#7c8cff'; coordCol = '#7c8cff'; bodyCol = '#e7eaff'; body = s.student; }
-      else if (s.assignedStudent) { bg = 'rgba(79,209,197,.14)'; border = '#4fd1c5'; coordCol = '#4fd1c5'; bodyCol = '#eafffb'; body = s.assignedStudent; }
-      else { bg = '#181b22'; border = '#2a303c'; coordCol = '#8a92a3'; bodyCol = '#4a515f'; body = '빈자리'; dashed = true; }
-
-      ctx.fillStyle = bg;
-      roundRect(ctx, x, y, cell, cell, 14); ctx.fill();
-      ctx.lineWidth = 1.5; ctx.strokeStyle = border;
-      if (dashed) ctx.setLineDash([4, 4]); else ctx.setLineDash([]);
-      ctx.stroke(); ctx.setLineDash([]);
-
-      if (coord) {
-        ctx.fillStyle = coordCol; ctx.font = '700 10px sans-serif';
-        ctx.textAlign = 'left'; ctx.fillText(coord, x + 8, y + 13); ctx.textAlign = 'center';
-      }
-      ctx.fillStyle = bodyCol;
-      ctx.font = (s.type === 'excepted' ? '700 20px' : '700 15px') + ' sans-serif';
-      ctx.fillText(fitText(ctx, body, cell - 12), x + cell / 2, y + cell / 2 + 4);
-    }));
-
-    try {
-      const link = document.createElement('a');
-      link.download = `우리반_자리배치도_${front ? '앞쪽기준' : '뒤쪽기준'}.png`;
-      link.href = cv.toDataURL('image/png');
-      link.click();
-      showModal("success", "저장 완료", "배치도 이미지를 PNG로 저장했습니다.");
-    } catch (err) {
-      showModal("error", "저장 실패", "이미지 저장에 실패했습니다. '인쇄하기'로 PDF 저장을 이용해 주세요.");
+  document.getElementById('addConflictBtn').addEventListener('click', function() {
+    var a = document.getElementById('conflictA').value;
+    var b = document.getElementById('conflictB').value;
+    var reason = document.getElementById('conflictReason').value.trim();
+    var errEl = document.getElementById('conflictError');
+    errEl.style.display = 'none';
+    if (!a || !b) { errEl.textContent = '학생을 선택해 주세요.'; errEl.style.display = 'block'; return; }
+    if (a === b) { errEl.textContent = '서로 다른 학생을 선택해 주세요.'; errEl.style.display = 'block'; return; }
+    if (state.conflicts.some(function(c) { return pairKey(c.a, c.b) === pairKey(a, b); })) {
+      errEl.textContent = '이미 등록된 갈등 관계예요.';
+      errEl.style.display = 'block';
+      return;
     }
-  }
+    state.conflicts.push({ id: uid(), a: a, b: b, reason: reason });
+    document.getElementById('conflictReason').value = '';
+    saveState();
+    renderAll();
+  });
+
+  document.getElementById('addPrefBtn').addEventListener('click', function() {
+    var a = document.getElementById('prefA').value;
+    var b = document.getElementById('prefB').value;
+    var reason = document.getElementById('prefReason').value.trim();
+    var errEl = document.getElementById('prefError');
+    errEl.style.display = 'none';
+    if (!a || !b) { errEl.textContent = '학생을 선택해 주세요.'; errEl.style.display = 'block'; return; }
+    if (a === b) { errEl.textContent = '서로 다른 학생을 선택해 주세요.'; errEl.style.display = 'block'; return; }
+    if (state.preferences.some(function(c) { return pairKey(c.a, c.b) === pairKey(a, b); })) {
+      errEl.textContent = '이미 등록된 선호 관계예요.';
+      errEl.style.display = 'block';
+      return;
+    }
+    state.preferences.push({ id: uid(), a: a, b: b, reason: reason });
+    document.getElementById('prefReason').value = '';
+    saveState();
+    renderAll();
+  });
+
+  ['cfgRows', 'cfgCols', 'cfgFront'].forEach(function(id) {
+    document.getElementById(id).addEventListener('change', function() {
+      var rows = Math.max(1, Math.min(10, parseInt(document.getElementById('cfgRows').value, 10) || 1));
+      var cols = Math.max(1, Math.min(10, parseInt(document.getElementById('cfgCols').value, 10) || 1));
+      var front = Math.max(1, Math.min(rows, parseInt(document.getElementById('cfgFront').value, 10) || 1));
+      state.config = { rows: rows, cols: cols, front: front };
+      state.arrangement = null;
+      saveState();
+      renderAll();
+    });
+  });
+
+  document.getElementById('runBtn').addEventListener('click', function() {
+    if (state.students.length === 0) return;
+    if (state.students.length > state.config.rows * state.config.cols) return;
+    var btn = document.getElementById('runBtn');
+    btn.textContent = '배치 중...';
+    btn.disabled = true;
+    setTimeout(function() {
+      state.arrangement = optimizeArrangement(state.config.rows, state.config.cols, state.config.front);
+      saveState();
+      renderMain();
+      btn.textContent = '자리 배치 실행';
+      btn.disabled = false;
+    }, 30);
+  });
+
+  document.getElementById('reshuffleBtn').addEventListener('click', function() {
+    document.getElementById('runBtn').click();
+  });
+
+  document.getElementById('printBtn').addEventListener('click', function() {
+    window.print();
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', function() {
+    if (!confirm('학생 명단, 갈등 관계, 배치 결과를 모두 지울까요?')) return;
+    state = { students: [], conflicts: [], preferences: [], config: { rows: 5, cols: 6, front: 2 }, arrangement: null };
+    saveState();
+    renderAll();
+  });
+
+  loadState();
+  renderAll();
+})();
 </script>
 </body>
 </html>
