@@ -10,7 +10,7 @@
 | 🎨 **[Kaleido](kaleido.html)** | 마우스 드래그로 그리는 대칭 만화경. 무지개 색과 거울 모드를 지원하고 PNG로 저장할 수 있습니다. |
 | 🌈 **[Color Rush](colorrush.html)** | 글자에 칠해진 색을 빠르게 맞히는 반사신경 게임. 스트룹 효과에 도전해 보세요. |
 | 🎲 **[Dice](dice.html)** | 상자 안에서 3D 주사위가 굴러다니다 멈추고, 나온 눈의 합을 보여줍니다. 1~5개까지 굴릴 수 있습니다. |
-| 🪑 **[Seats](seats.html)** | 학생 명단으로 교실 자리를 랜덤 배정합니다. 제외석·고정석·자리교환, 앞뒤 시점 전환, 배치도 이미지 저장을 지원합니다. |
+| 🪑 **[Seats](seats.html)** | 학생 명단으로 교실 자리를 랜덤 배정합니다. 제외석·고정석·자리교환, 떨어뜨릴/붙여 앉힐 학생 관계 반영, 앞뒤 시점 전환, 배치도 이미지·한글(HWPX)·워드(DOCX) 저장을 지원합니다. |
 | 🎡 **[Roulette](roulette.html)** | 인원수만큼 칸이 생기는 번호 뽑기 룰렛입니다. 효과음과 함께 돌다가 멈추고, 뽑힌 번호 제외 모드도 지원합니다. |
 | 📝 **[수업지도안 생성기](https://lesson-plan-generator-steel.vercel.app)** | 교과서 PDF와 수업 아이디어를 입력하면 AI가 강의식·토론식·활동중심식 지도안 3안을 생성합니다. Word 다운로드 또는 Google Docs 저장 지원. ([별도 저장소](https://github.com/SonYoungguk/lesson-plan-generator), 인터넷 연결 필요) |
 | 💰 **[공무원연금 계산기](https://sonyoungguk.github.io/pension-calculator/)** | 법령 기반으로 공무원 퇴직연금·퇴직수당·실수령액을 추정하고, 언제 퇴직하는 것이 유리한지 시점별로 비교합니다. ([별도 저장소](https://github.com/SonYoungguk/pension-calculator), 인터넷 연결 필요) |
