@@ -1,7 +1,7 @@
 {
   "source": "https://github.com/SonYoungguk/playkit",
-  "sourceCommit": "f2cad95d0ade8fe4cec483ea124af6ff9d32e1c7",
+  "sourceCommit": "bae74675b2cb9f819ecae2b50bc36e201873a254",
   "sourceBranch": "main",
-  "synchronizedAt": "2026-10-16T06:22:55.158Z",
+  "synchronizedAt": "2026-10-16T11:37:53.661Z",
   "note": "원본의 .github/workflows는 보안상 복제하지 않습니다."
 }

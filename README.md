@@ -12,6 +12,7 @@
 | 🎲 **[Dice](dice.html)** | 상자 안에서 3D 주사위가 굴러다니다 멈추고, 나온 눈의 합을 보여줍니다. 1~5개까지 굴릴 수 있습니다. |
 | 🪑 **[Seats](seats.html)** | 학생 명단으로 교실 자리를 랜덤 배정합니다. 제외석·고정석·자리교환, 떨어뜨릴/붙여 앉힐 학생 관계 반영, 앞뒤 시점 전환, 배치도 이미지·한글(HWPX)·워드(DOCX) 저장을 지원합니다. |
 | 🎡 **[Roulette](roulette.html)** | 인원수만큼 칸이 생기는 번호 뽑기 룰렛입니다. 효과음과 함께 돌다가 멈추고, 뽑힌 번호 제외 모드도 지원합니다. |
+| ⏱️ **[Stopwatch](stopwatch.html)** | 구간 기록이 되는 스톱워치와 알림음이 울리는 카운트다운 타이머입니다. 전체 화면으로 TV·프로젝터에 크게 띄울 수 있고, 키보드 단축키(Space·L·R·F)를 지원합니다. |
 | 📝 **[수업지도안 생성기](https://lesson-plan-generator-steel.vercel.app)** | 교과서 PDF와 수업 아이디어를 입력하면 AI가 강의식·토론식·활동중심식 지도안 3안을 생성합니다. Word 다운로드 또는 Google Docs 저장 지원. ([별도 저장소](https://github.com/SonYoungguk/lesson-plan-generator), 인터넷 연결 필요) |
 | 💰 **[공무원연금 계산기](https://sonyoungguk.github.io/pension-calculator/)** | 법령 기반으로 공무원 퇴직연금·퇴직수당·실수령액을 추정하고, 언제 퇴직하는 것이 유리한지 시점별로 비교합니다. ([별도 저장소](https://github.com/SonYoungguk/pension-calculator), 인터넷 연결 필요) |
 | 🧪 **[사이언스로그](https://science-log.vercel.app)** | 매일 아침 과학·교육 뉴스를 자동으로 모아 과목·학년별로 정리해주는 중학교 과학 교사용 뉴스 로그. 별표로 스크랩도 가능합니다. ([별도 저장소](https://github.com/SonYoungguk/science-log), 비밀번호 필요) |
