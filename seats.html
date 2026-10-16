@@ -934,18 +934,21 @@
   }
 
   // ---------- 문서 저장 (HWPX / DOCX, 외부 라이브러리 없음) ----------
-  // 화면에 보이는 시점(앞/뒤) 그대로 표를 만든다
+  // 1쪽: 교실 앞쪽(칠판 위) 기준, 2쪽: 교실 뒤쪽(180° 회전) 기준
   function chartModel() {
-    const front = viewPerspective === 'front';
-    const grid = order(rows).map(r => order(cols).map(c => {
-      const s = gridData[`${r},${c}`] || { type: 'normal' };
-      if (s.type === 'excepted') return { kind: 'excepted', coord: '', name: '' };
-      if (s.type === 'fixed') return { kind: 'fixed', coord: `${r + 1}-${c + 1} 고정`, name: s.student };
-      return { kind: s.assignedStudent ? 'assigned' : 'empty', coord: `${r + 1}-${c + 1}`, name: s.assignedStudent || '' };
-    }));
+    const view = front => {
+      const idx = n => Array.from({ length: n }, (_, i) => front ? i : n - 1 - i);
+      const grid = idx(rows).map(r => idx(cols).map(c => {
+        const s = gridData[`${r},${c}`] || { type: 'normal' };
+        if (s.type === 'excepted') return { kind: 'excepted', coord: '', name: '' };
+        if (s.type === 'fixed') return { kind: 'fixed', coord: `${r + 1}-${c + 1} 고정`, name: s.student };
+        return { kind: s.assignedStudent ? 'assigned' : 'empty', coord: `${r + 1}-${c + 1}`, name: s.assignedStudent || '' };
+      }));
+      return { front, grid, label: front ? '교실 앞쪽(칠판) 기준' : '교실 뒤쪽 기준 (칠판이 아래)' };
+    };
     const d = new Date();
     const date = `${d.getFullYear()}. ${d.getMonth() + 1}. ${d.getDate()}.`;
-    return { front, grid, date, title: '우리 반 자리 배치도', file: `우리반_자리배치도_${front ? '앞쪽기준' : '뒤쪽기준'}` };
+    return { views: [view(true), view(false)], date, title: '우리 반 자리 배치도', file: '우리반_자리배치도' };
   }
   function xml(str) {
     return String(str).replace(/[&<>"]/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[m]));
@@ -1013,8 +1016,8 @@
     const nameSz = cols > 10 ? 20 : cols > 7 ? 24 : 30; // half-point
     const run = (text, { sz = 22, bold = false, color = '000000' } = {}) =>
       `<w:r><w:rPr><w:rFonts w:ascii="Malgun Gothic" w:eastAsia="맑은 고딕" w:hAnsi="Malgun Gothic"/>${bold ? '<w:b/>' : ''}<w:color w:val="${color}"/><w:sz w:val="${sz}"/><w:szCs w:val="${sz}"/></w:rPr><w:t xml:space="preserve">${xml(text)}</w:t></w:r>`;
-    const para = (content, { after = 0 } = {}) =>
-      `<w:p><w:pPr><w:spacing w:before="0" w:after="${after}" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr>${content}</w:p>`;
+    const para = (content, { after = 0, newPage = false } = {}) =>
+      `<w:p><w:pPr>${newPage ? '<w:pageBreakBefore/>' : ''}<w:spacing w:before="0" w:after="${after}" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr>${content}</w:p>`;
     const borders = '<w:tcBorders><w:top w:val="single" w:sz="8" w:color="444444"/><w:left w:val="single" w:sz="8" w:color="444444"/><w:bottom w:val="single" w:sz="8" w:color="444444"/><w:right w:val="single" w:sz="8" w:color="444444"/></w:tcBorders>';
     const table = (rowsXml, widths) =>
       `<w:tbl><w:tblPr><w:tblW w:w="${widths.reduce((a, b) => a + b, 0)}" w:type="dxa"/><w:jc w:val="center"/><w:tblLayout w:type="fixed"/><w:tblCellMar><w:left w:w="60" w:type="dxa"/><w:right w:w="60" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid>${widths.map(w => `<w:gridCol w:w="${w}"/>`).join('')}</w:tblGrid>${rowsXml}</w:tbl>`;
@@ -1023,17 +1026,19 @@
 
     const boardW = Math.min(cellW * cols, 6000);
     const board = table(`<w:tr><w:trPr><w:trHeight w:val="560" w:hRule="exact"/></w:trPr>${cell(boardW, para(run('칠      판', { sz: 26, bold: true })), 'D9D9D9')}</w:tr>`, [boardW]);
-    const gridRows = m.grid.map(row => `<w:tr><w:trPr><w:trHeight w:val="${cellH}" w:hRule="exact"/><w:cantSplit/></w:trPr>${row.map(c => {
+    const seatsTable = grid => table(grid.map(row => `<w:tr><w:trPr><w:trHeight w:val="${cellH}" w:hRule="exact"/><w:cantSplit/></w:trPr>${row.map(c => {
       if (c.kind === 'excepted') return cell(cellW, para(''), 'EDEDED');
       const inner = para(run(c.coord, { sz: 14, color: '888888' })) + para(c.name ? run(c.name, { sz: nameSz, bold: true }) : '');
       return cell(cellW, inner, c.kind === 'fixed' ? 'EEF0FF' : '');
-    }).join('')}</w:tr>`).join('');
-    const seats = table(gridRows, new Array(cols).fill(cellW));
+    }).join('')}</w:tr>`).join(''), new Array(cols).fill(cellW));
     const gap = para('', { after: 0 });
 
-    const body = para(run(m.title, { sz: 36, bold: true }), { after: 60 }) +
-      para(run(`${m.date}  ·  ${m.front ? '교실 앞쪽(칠판) 기준' : '교실 뒤쪽 기준'}`, { sz: 18, color: '666666' }), { after: 240 }) +
-      (m.front ? board + gap + seats : seats + gap + board);
+    const body = m.views.map((v, i) => {
+      const seats = seatsTable(v.grid);
+      return para(run(m.title, { sz: 36, bold: true }), { after: 60, newPage: i > 0 }) +
+        para(run(`${m.date}  ·  ${v.label}`, { sz: 18, color: '666666' }), { after: 240 }) +
+        (v.front ? board + gap + seats : seats + gap + board);
+    }).join('');
 
     const documentXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${body}<w:sectPr><w:pgSz w:w="${pageW}" w:h="${pageH}" w:orient="landscape"/><w:pgMar w:top="${margin}" w:right="${margin}" w:bottom="${margin}" w:left="${margin}" w:header="0" w:footer="0" w:gutter="0"/></w:sectPr></w:body></w:document>`;
     const blob = makeZip([
@@ -1084,22 +1089,27 @@
     const secPr = `<hp:secPr id="" textDirection="HORIZONTAL" spaceColumns="1134" tabStop="8000" tabStopVal="4000" tabStopUnit="HWPUNIT" outlineShapeIDRef="0" memoShapeIDRef="0" textVerticalWidthHead="0" masterPageCnt="0"><hp:grid lineGrid="0" charGrid="0" wonggojiFormat="0"/><hp:startNum pageStartsOn="BOTH" page="0" pic="0" tbl="0" equation="0"/><hp:visibility hideFirstHeader="0" hideFirstFooter="0" hideFirstMasterPage="0" border="SHOW_ALL" fill="SHOW_ALL" hideFirstPageNum="0" hideFirstEmptyLine="0" showLineNumber="0"/><hp:lineNumberShape restartType="0" countBy="0" distance="0" startNumber="0"/><hp:pagePr landscape="NARROWLY" width="${paperW}" height="${paperH}" gutterType="LEFT_ONLY"><hp:margin header="0" footer="0" gutter="0" left="${mLR}" right="${mLR}" top="${mTB}" bottom="${mTB}"/></hp:pagePr><hp:footNotePr><hp:autoNumFormat type="DIGIT" userChar="" prefixChar="" suffixChar=")" supscript="0"/><hp:noteLine length="-1" type="SOLID" width="0.12 mm" color="#000000"/><hp:noteSpacing betweenNotes="283" belowLine="567" aboveLine="850"/><hp:numbering type="CONTINUOUS" newNum="1"/><hp:placement place="EACH_COLUMN" beneathText="0"/></hp:footNotePr><hp:endNotePr><hp:autoNumFormat type="DIGIT" userChar="" prefixChar="" suffixChar=")" supscript="0"/><hp:noteLine length="14692344" type="SOLID" width="0.12 mm" color="#000000"/><hp:noteSpacing betweenNotes="0" belowLine="567" aboveLine="850"/><hp:numbering type="CONTINUOUS" newNum="1"/><hp:placement place="END_OF_DOCUMENT" beneathText="0"/></hp:endNotePr><hp:pageBorderFill type="BOTH" borderFillIDRef="1" textBorder="PAPER" headerInside="0" footerInside="0" fillArea="PAPER"><hp:offset left="1417" right="1417" top="1417" bottom="1417"/></hp:pageBorderFill><hp:pageBorderFill type="EVEN" borderFillIDRef="1" textBorder="PAPER" headerInside="0" footerInside="0" fillArea="PAPER"><hp:offset left="1417" right="1417" top="1417" bottom="1417"/></hp:pageBorderFill><hp:pageBorderFill type="ODD" borderFillIDRef="1" textBorder="PAPER" headerInside="0" footerInside="0" fillArea="PAPER"><hp:offset left="1417" right="1417" top="1417" bottom="1417"/></hp:pageBorderFill></hp:secPr>`;
 
     const boardW = Math.min(cellW * cols, 28346), boardH = 2268;
-    const boardTbl = p(`<hp:run charPrIDRef="0">${tbl(1, 1, boardW, boardH, `<hp:tr>${tc(0, 0, boardW, boardH, 4, p(run('칠      판', 4), 2))}</hp:tr>`)}</hp:run>`);
-    const rowsXml = m.grid.map((row, r) => `<hp:tr>${row.map((c, ci) => {
+    const boardTbl = () => p(`<hp:run charPrIDRef="0">${tbl(1, 1, boardW, boardH, `<hp:tr>${tc(0, 0, boardW, boardH, 4, p(run('칠      판', 4), 2))}</hp:tr>`)}</hp:run>`);
+    const seatTbl = grid => p(`<hp:run charPrIDRef="0">${tbl(rows, cols, cellW * cols, cellH * rows, grid.map((row, r) => `<hp:tr>${row.map((c, ci) => {
       if (c.kind === 'excepted') return tc(r, ci, cellW, cellH, 4, p(run('', 3), 2));
       return tc(r, ci, cellW, cellH, 3, p(run(c.coord, 3), 2) + p(run(c.name, 2), 2));
-    }).join('')}</hp:tr>`).join('');
-    const seatTbl = p(`<hp:run charPrIDRef="0">${tbl(rows, cols, cellW * cols, cellH * rows, rowsXml)}</hp:run>`);
-    const gap = p(run('', 0));
+    }).join('')}</hp:tr>`).join(''))}</hp:run>`);
+    const gap = () => p(run('', 0));
 
-    const first = p(`<hp:run charPrIDRef="1">${secPr}<hp:ctrl><hp:colPr id="" type="NEWSPAPER" layout="LEFT" colCount="1" sameSz="1" sameGap="0"/></hp:ctrl></hp:run>${run(m.title, 1)}`);
-    const sub = p(run(`${m.date}  ·  ${m.front ? '교실 앞쪽(칠판) 기준' : '교실 뒤쪽 기준'}`, 5));
-    const section = XML_HEAD + `<hs:sec ${HWPX_NS}>` + first + sub + gap +
-      (m.front ? boardTbl + gap + seatTbl : seatTbl + gap + boardTbl) + `</hs:sec>`;
+    const pages = m.views.map((v, i) => {
+      // 첫 쪽 제목 문단에는 구역 설정(secPr)을, 둘째 쪽 제목 문단에는 쪽 나누기를 넣는다
+      const title = i === 0
+        ? p(`<hp:run charPrIDRef="1">${secPr}<hp:ctrl><hp:colPr id="" type="NEWSPAPER" layout="LEFT" colCount="1" sameSz="1" sameGap="0"/></hp:ctrl></hp:run>${run(m.title, 1)}`)
+        : `<hp:p id="${pid++}" paraPrIDRef="1" styleIDRef="0" pageBreak="1" columnBreak="0" merged="0">${run(m.title, 1)}</hp:p>`;
+      const board = boardTbl(), seats = seatTbl(v.grid);
+      return title + p(run(`${m.date}  ·  ${v.label}`, 5)) + gap() +
+        (v.front ? board + gap() + seats : seats + gap() + board);
+    });
+    const section = XML_HEAD + `<hs:sec ${HWPX_NS}>` + pages.join('') + `</hs:sec>`;
 
     const now = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
     const contentHpf = XML_HEAD + `<opf:package ${HWPX_NS} version="" unique-identifier="" id=""><opf:metadata><opf:title>${xml(m.title)}</opf:title><opf:language>ko</opf:language><opf:meta name="creator" content="text">Seats</opf:meta><opf:meta name="CreatedDate" content="text">${now}</opf:meta><opf:meta name="ModifiedDate" content="text">${now}</opf:meta></opf:metadata><opf:manifest><opf:item id="header" href="Contents/header.xml" media-type="application/xml"/><opf:item id="section0" href="Contents/section0.xml" media-type="application/xml"/><opf:item id="settings" href="settings.xml" media-type="application/xml"/></opf:manifest><opf:spine><opf:itemref idref="header" linear="yes"/><opf:itemref idref="section0" linear="yes"/></opf:spine></opf:package>`;
-    const previewText = m.title + '\r\n' + m.grid.map(row => row.map(c => c.name || '-').join('\t')).join('\r\n');
+    const previewText = m.title + '\r\n' + m.views[0].grid.map(row => row.map(c => c.name || '-').join('\t')).join('\r\n');
 
     const blob = makeZip([
       ['mimetype', 'application/hwp+zip'], // 반드시 첫 항목, 무압축
